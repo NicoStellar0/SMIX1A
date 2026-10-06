@@ -150,6 +150,11 @@ export default function ChatPage() {
             setPollVotes(prev => {
               const msgId = payload.new.message_id;
               const currentVotes = prev[msgId] || [];
+              
+              // Skip if we already have this vote from optimistic UI
+              const alreadyExists = currentVotes.some(v => v.id === payload.new.id || (v.user_id === payload.new.user_id && v.option_index === payload.new.option_index));
+              if(alreadyExists) return prev;
+
               return { 
                 ...prev, 
                 [msgId]: [...currentVotes.filter(v => v.user_id !== payload.new.user_id), payload.new] 
@@ -254,6 +259,17 @@ export default function ChatPage() {
 
   const handleVote = async (messageId: string, optionIndex: number) => {
     if (!currentUser) return;
+
+    // Optimistic UI para Votos (0ms de retraso visual)
+    setPollVotes(prev => {
+      const currentVotes = prev[messageId] || [];
+      const tempVote = { id: `temp_${Date.now()}`, message_id: messageId, user_id: currentUser.id, option_index: optionIndex };
+      return {
+        ...prev,
+        [messageId]: [...currentVotes.filter(v => v.user_id !== currentUser.id), tempVote]
+      };
+    });
+
     await supabase.from('poll_votes').upsert({
       message_id: messageId,
       user_id: currentUser.id,
@@ -263,6 +279,10 @@ export default function ChatPage() {
 
   const handleDelete = async (id: string) => {
     if (!confirm('¿Borrar este mensaje?')) return;
+
+    // Optimistic UI para Borrado (desaparece al instante)
+    setMessages(prev => prev.filter(msg => msg.id !== id));
+
     await supabase.from('messages').delete().eq('id', id);
   };
 
