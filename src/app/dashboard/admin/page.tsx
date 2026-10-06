@@ -1,19 +1,47 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { BookOpen, BrainCircuit, Plus, Loader2, CheckCircle2 } from 'lucide-react';
+import { BookOpen, BrainCircuit, Plus, Loader2, CheckCircle2, Users, ShieldAlert } from 'lucide-react';
 
 export default function AdminPage() {
-  const [activeTab, setActiveTab] = useState<'memory_card' | 'mind_map'>('memory_card');
+  const [activeTab, setActiveTab] = useState<'memory_card' | 'mind_map' | 'users'>('memory_card');
   const [title, setTitle] = useState('');
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState('');
   const [mindMapUrl, setMindMapUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  
+  // User Management State
+  const [users, setUsers] = useState<any[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
 
   const supabase = createClient();
+
+  useEffect(() => {
+    if (activeTab === 'users') {
+      fetchUsers();
+    }
+  }, [activeTab]);
+
+  const fetchUsers = async () => {
+    setLoadingUsers(true);
+    const { data } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+    if (data) setUsers(data);
+    setLoadingUsers(false);
+  };
+
+  const handleRoleChange = async (userId: string, newRole: string) => {
+    if (!confirm(`Are you sure you want to change this user's role to ${newRole}?`)) return;
+    
+    const { error } = await supabase.from('profiles').update({ role: newRole }).eq('id', userId);
+    if (!error) {
+      setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u));
+    } else {
+      alert('Error updating role: ' + error.message);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,11 +110,74 @@ export default function AdminPage() {
             <BrainCircuit size={18} />
             Mind Map
           </button>
+          <button
+            onClick={() => setActiveTab('users')}
+            className={`flex-1 py-4 flex items-center justify-center gap-2 font-bold transition-all ${
+              activeTab === 'users' ? 'bg-amber-500/10 text-amber-400 border-b-2 border-amber-500' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'
+            }`}
+          >
+            <Users size={18} />
+            Manage Users
+          </button>
         </div>
 
-        {/* Form */}
+        {/* Form / Content */}
         <div className="p-8">
-          <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+          {activeTab === 'users' ? (
+            <div className="space-y-6">
+              <div className="flex items-center gap-3 mb-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-400">
+                <ShieldAlert size={24} className="shrink-0" />
+                <p className="text-sm font-medium">Changing a user's role grants them immediate access to restricted areas. Be careful who you promote!</p>
+              </div>
+              
+              {loadingUsers ? (
+                <div className="flex justify-center py-12 text-slate-500"><Loader2 className="animate-spin" /></div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-white/10">
+                        <th className="pb-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Name</th>
+                        <th className="pb-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Email</th>
+                        <th className="pb-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Current Role</th>
+                        <th className="pb-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-right">Change Role</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {users.map(u => (
+                        <tr key={u.id}>
+                          <td className="py-4 font-bold text-white">{u.full_name}</td>
+                          <td className="py-4 text-slate-400 text-sm">{u.email}</td>
+                          <td className="py-4">
+                            <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+                              u.role === 'admin' ? 'bg-amber-500/20 text-amber-400' :
+                              u.role === 'delegate' ? 'bg-emerald-500/20 text-emerald-400' :
+                              'bg-slate-800 text-slate-400'
+                            }`}>
+                              {u.role}
+                            </span>
+                          </td>
+                          <td className="py-4 text-right">
+                            <select 
+                              value={u.role}
+                              onChange={(e) => handleRoleChange(u.id, e.target.value)}
+                              className="bg-slate-900 border border-slate-700 text-white rounded-lg px-3 py-2 text-sm outline-none focus:border-amber-500"
+                            >
+                              <option value="student">Student</option>
+                              <option value="sub-delegate">Sub-Delegate</option>
+                              <option value="delegate">Delegate</option>
+                              <option value="admin">Admin</option>
+                            </select>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="flex flex-col gap-6">
             
             <div className="flex flex-col gap-2">
               <label className="text-sm font-bold text-slate-400 uppercase tracking-wider">Title / Topic</label>
@@ -153,6 +244,7 @@ export default function AdminPage() {
               )}
             </button>
           </form>
+          )}
         </div>
       </div>
     </div>

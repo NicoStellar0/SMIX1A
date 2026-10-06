@@ -7,6 +7,7 @@ import { UploadCloud, File, Image as ImageIcon, Loader2, CheckCircle2, X } from 
 export default function UploadPage() {
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState('');
+  const [subject, setSubject] = useState('General');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -60,6 +61,7 @@ export default function UploadPage() {
     const { error: dbError } = await supabase.from('tasks').insert({
       student_id: user.id,
       title: title.trim(),
+      subject: subject,
       file_url: publicUrl,
       file_type: file.type.includes('image') ? 'image' : 'document'
     });
@@ -70,6 +72,7 @@ export default function UploadPage() {
       setSuccess(true);
       setFile(null);
       setTitle('');
+      setSubject('General');
       if (fileInputRef.current) fileInputRef.current.value = '';
       setTimeout(() => setSuccess(false), 3000);
     } else {
@@ -102,6 +105,23 @@ export default function UploadPage() {
               className="bg-slate-900/50 border border-slate-700 text-white rounded-xl py-4 px-5 outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all text-lg"
               placeholder="e.g. Math Homework - Page 42"
             />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-bold text-slate-400 uppercase tracking-wider">Subject / Category</label>
+            <select
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              className="bg-slate-900/50 border border-slate-700 text-white rounded-xl py-4 px-5 outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all text-lg appearance-none cursor-pointer"
+            >
+              <option value="General">General</option>
+              <option value="Networks">Networks</option>
+              <option value="Operating Systems">Operating Systems</option>
+              <option value="Hardware">Hardware</option>
+              <option value="Web Apps">Web Apps</option>
+              <option value="Databases">Databases</option>
+              <option value="Office Apps">Office Apps</option>
+            </select>
           </div>
 
           <div className="flex flex-col gap-2">
