@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/client';
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
@@ -21,23 +21,27 @@ export default function AuthPage() {
     setError(null);
 
     try {
+      const formattedUsername = username.trim().toLowerCase().replace(/\s+/g, '_');
+      const fakeEmail = `${formattedUsername}@smix1a.local`;
+
       if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({
-          email,
+          email: fakeEmail,
           password,
         });
         if (error) throw error;
         window.location.href = '/dashboard'; // Redirect on success
       } else {
         const { error } = await supabase.auth.signUp({
-          email,
+          email: fakeEmail,
           password,
           options: {
             data: { full_name: name },
           },
         });
         if (error) throw error;
-        alert('¡Revisa tu correo para el enlace de confirmación!');
+        // Si tienes la confirmación de correo desactivada en Supabase, el usuario ya estará logueado.
+        window.location.href = '/dashboard'; 
       }
     } catch (err: any) {
       setError(err.message);
@@ -91,13 +95,13 @@ export default function AuthPage() {
             </div>
 
             <div className="relative">
-              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+              <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
               <input 
-                type="email" 
+                type="text" 
                 required
-                placeholder="Dirección de Correo" 
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Nombre de Usuario" 
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 className="w-full bg-slate-900/50 border border-slate-700 text-white rounded-xl py-3 pl-12 pr-4 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-500"
               />
             </div>
