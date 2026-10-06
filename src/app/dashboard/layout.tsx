@@ -11,6 +11,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const supabase = createClient();
   const [userRole, setUserRole] = useState<string | null>(null);
   const [theme, setTheme] = useState<'dark'|'light'>('dark');
+  const [onlineCount, setOnlineCount] = useState<number>(0);
 
   useEffect(() => {
     // Read theme from local storage
@@ -20,14 +21,31 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       document.documentElement.setAttribute('data-theme', 'light');
     }
 
-    const fetchRole = async () => {
+    const channel = supabase.channel('global_presence');
+
+    const initData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { data } = await supabase.from('profiles').select('role').eq('id', user.id).single();
         if (data) setUserRole(data.role);
+
+        channel
+          .on('presence', { event: 'sync' }, () => {
+            const state = channel.presenceState();
+            setOnlineCount(Object.keys(state).length);
+          })
+          .subscribe(async (status) => {
+            if (status === 'SUBSCRIBED') {
+              await channel.track({ user: user.id, online_at: new Date().toISOString() });
+            }
+          });
       }
     };
-    fetchRole();
+    initData();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [supabase]);
 
   const toggleTheme = () => {
@@ -72,6 +90,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <BookOpen className="text-white" size={20} />
             </div>
             <span className="text-xl font-bold text-white tracking-tight">Clase SMIX1A</span>
+          </div>
+          
+          <div className="flex items-center gap-3 mb-8 px-4 py-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
+             <div className="relative flex h-3 w-3">
+               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+               <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+             </div>
+             <span className="text-sm font-bold text-emerald-400">
+               {onlineCount} {onlineCount === 1 ? 'Alumno Online' : 'Alumnos Online'}
+             </span>
           </div>
 
           <nav className="space-y-2">

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { BookOpen, BrainCircuit, Loader2, Sparkles, ChevronRight, Trash2 } from 'lucide-react';
+import { BookOpen, BrainCircuit, Loader2, Sparkles, ChevronRight, Trash2, Plus, CheckCircle2 } from 'lucide-react';
 
 type Material = {
   id: string;
@@ -22,6 +22,13 @@ export default function StudyPage() {
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
   const [htmlMapContent, setHtmlMapContent] = useState<string | null>(null);
   const [mapLoading, setMapLoading] = useState(false);
+
+  // Create Card State
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [newTitle, setNewTitle] = useState('');
+  const [newQuestion, setNewQuestion] = useState('');
+  const [newAnswer, setNewAnswer] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
 
   const supabase = createClient();
 
@@ -78,6 +85,38 @@ export default function StudyPage() {
     setMapLoading(false);
   };
 
+  const handleCreateCard = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsCreating(true);
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      setIsCreating(false);
+      return;
+    }
+
+    const newMaterial = {
+      title: newTitle,
+      type: 'memory_card',
+      content: { question: newQuestion, answer: newAnswer },
+      author_id: user.id
+    };
+
+    const { data, error } = await supabase.from('study_materials').insert(newMaterial).select().single();
+    
+    if (!error && data) {
+      setMaterials(prev => [data as Material, ...prev]);
+      setIsCreateModalOpen(false);
+      setNewTitle('');
+      setNewQuestion('');
+      setNewAnswer('');
+    } else {
+      alert('Error al crear la tarjeta: ' + (error?.message || 'Error desconocido'));
+    }
+    
+    setIsCreating(false);
+  };
+
   const isModerator = userRole === 'admin' || userRole === 'delegate' || userRole === 'sub-delegate';
   
   const memoryCards = materials.filter(m => m.type === 'memory_card');
@@ -85,11 +124,19 @@ export default function StudyPage() {
 
   return (
     <div className="p-8 max-w-6xl mx-auto space-y-12">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400 tracking-tight mb-2 flex items-center gap-3">
-          <Sparkles className="text-indigo-400" /> Sección de Estudio
-        </h1>
-        <p className="text-slate-400 text-lg">Domina tus asignaturas con Tarjetas de Memoria interactivas y Mapas Mentales.</p>
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
+        <div>
+          <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400 tracking-tight mb-2 flex items-center gap-3">
+            <Sparkles className="text-indigo-400" /> Sección de Estudio
+          </h1>
+          <p className="text-slate-400 text-lg">Domina tus asignaturas con Tarjetas de Memoria interactivas y Mapas Mentales.</p>
+        </div>
+        <button 
+          onClick={() => setIsCreateModalOpen(true)}
+          className="flex items-center gap-2 px-6 py-3 bg-indigo-500 hover:bg-indigo-600 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/20 transition-all shrink-0"
+        >
+          <Plus size={20} /> Crear Tarjeta
+        </button>
       </div>
 
       {loading ? (
@@ -261,6 +308,68 @@ export default function StudyPage() {
                 No se pudo cargar el mapa.
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Create Memory Card Modal */}
+      {isCreateModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-white/10 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl">
+            <div className="p-6 border-b border-white/10 flex justify-between items-center bg-white/5">
+              <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                <BookOpen className="text-indigo-400" /> Nueva Tarjeta
+              </h2>
+              <button 
+                onClick={() => setIsCreateModalOpen(false)}
+                className="text-slate-400 hover:text-white transition-colors p-2"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <form onSubmit={handleCreateCard} className="p-6 space-y-4">
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Título / Tema</label>
+                <input 
+                  type="text" 
+                  required
+                  value={newTitle}
+                  onChange={(e) => setNewTitle(e.target.value)}
+                  className="bg-slate-950 border border-slate-700 text-white rounded-xl py-3 px-4 outline-none focus:border-indigo-500 transition-all"
+                  placeholder="Ej. Comandos de Linux"
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Pregunta</label>
+                <textarea 
+                  required
+                  value={newQuestion}
+                  onChange={(e) => setNewQuestion(e.target.value)}
+                  className="bg-slate-950 border border-slate-700 text-white rounded-xl py-3 px-4 outline-none focus:border-indigo-500 transition-all min-h-[80px]"
+                  placeholder="¿Cuál es el comando para listar archivos?"
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Respuesta</label>
+                <textarea 
+                  required
+                  value={newAnswer}
+                  onChange={(e) => setNewAnswer(e.target.value)}
+                  className="bg-slate-950 border border-slate-700 text-white rounded-xl py-3 px-4 outline-none focus:border-indigo-500 transition-all min-h-[80px]"
+                  placeholder="El comando 'ls'."
+                />
+              </div>
+              
+              <button 
+                type="submit"
+                disabled={isCreating}
+                className="w-full py-4 mt-2 bg-indigo-500 hover:bg-indigo-600 text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {isCreating ? <Loader2 className="animate-spin" /> : <CheckCircle2 />}
+                {isCreating ? 'Creando...' : 'Crear y Publicar'}
+              </button>
+            </form>
           </div>
         </div>
       )}
