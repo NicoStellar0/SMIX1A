@@ -17,6 +17,11 @@ export default function StudyPage() {
   const [loading, setLoading] = useState(true);
   const [flippedCards, setFlippedCards] = useState<Record<string, boolean>>({});
   const [userRole, setUserRole] = useState<string | null>(null);
+  
+  // HTML Map Viewer State
+  const [isMapModalOpen, setIsMapModalOpen] = useState(false);
+  const [htmlMapContent, setHtmlMapContent] = useState<string | null>(null);
+  const [mapLoading, setMapLoading] = useState(false);
 
   const supabase = createClient();
 
@@ -57,6 +62,20 @@ export default function StudyPage() {
     if (!confirm('Delete this study material?')) return;
     await supabase.from('study_materials').delete().eq('id', id);
     setMaterials(prev => prev.filter(m => m.id !== id));
+  };
+
+  const openHtmlMap = async (url: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    setMapLoading(true);
+    setIsMapModalOpen(true);
+    try {
+      const res = await fetch(url);
+      const text = await res.text();
+      setHtmlMapContent(text);
+    } catch (err) {
+      alert("Error al cargar el mapa.");
+    }
+    setMapLoading(false);
   };
 
   const isModerator = userRole === 'admin' || userRole === 'delegate' || userRole === 'sub-delegate';
@@ -161,17 +180,10 @@ export default function StudyPage() {
                     <div className="h-48 bg-black/50 relative overflow-hidden flex items-center justify-center border-b border-white/10">
                       {map.content.url ? (
                         map.content.url.toLowerCase().includes('.html') ? (
-                          <>
-                            <div className="absolute inset-0 bg-transparent z-10" />
-                            <iframe 
-                              src={map.content.url} 
-                              className="w-full h-[500px] transform scale-50 origin-top-left pointer-events-none group-hover:scale-55 transition-transform duration-500" 
-                              scrolling="no"
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent z-10 flex items-end p-4">
-                              <span className="text-xs font-bold text-fuchsia-400 bg-fuchsia-400/20 px-2 py-1 rounded-md border border-fuchsia-400/30">Mapa Interactivo HTML</span>
-                            </div>
-                          </>
+                          <div className="flex flex-col items-center justify-center text-fuchsia-400 group-hover:scale-110 transition-transform duration-500">
+                            <BrainCircuit size={64} className="mb-3 opacity-80" />
+                            <span className="text-xs font-bold bg-fuchsia-500/20 px-3 py-1 rounded-full border border-fuchsia-500/30">Mapa Interactivo HTML</span>
+                          </div>
                         ) : (
                           <img 
                             src={map.content.url} 
@@ -191,14 +203,23 @@ export default function StudyPage() {
                             <Trash2 size={16} />
                           </button>
                         )}
-                        <a 
-                          href={map.content.url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="px-4 py-2 bg-fuchsia-500/20 text-fuchsia-300 rounded-xl text-sm font-bold hover:bg-fuchsia-500/30 transition-colors"
-                        >
-                          Ver Mapa
-                        </a>
+                        {map.content.url?.toLowerCase().includes('.html') ? (
+                          <button 
+                            onClick={(e) => openHtmlMap(map.content.url, e)}
+                            className="px-4 py-2 bg-fuchsia-500/20 text-fuchsia-300 rounded-xl text-sm font-bold hover:bg-fuchsia-500/30 transition-colors"
+                          >
+                            Abrir Mapa
+                          </button>
+                        ) : (
+                          <a 
+                            href={map.content.url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="px-4 py-2 bg-fuchsia-500/20 text-fuchsia-300 rounded-xl text-sm font-bold hover:bg-fuchsia-500/30 transition-colors"
+                          >
+                            Ver Imagen
+                          </a>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -207,6 +228,41 @@ export default function StudyPage() {
             </section>
           )}
         </>
+      )}
+
+      {/* Fullscreen HTML Map Viewer Modal */}
+      {isMapModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col">
+          <div className="p-4 bg-slate-900 border-b border-white/10 flex justify-between items-center shadow-xl">
+            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+              <Sparkles className="text-fuchsia-400" /> Visor Interactivo
+            </h2>
+            <button 
+              onClick={() => { setIsMapModalOpen(false); setHtmlMapContent(null); }}
+              className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl transition-colors"
+            >
+              Cerrar Mapa
+            </button>
+          </div>
+          <div className="flex-1 relative bg-white">
+            {mapLoading ? (
+              <div className="absolute inset-0 flex items-center justify-center bg-slate-950 text-slate-500 gap-3">
+                <Loader2 className="animate-spin" /> Descargando mapa seguro...
+              </div>
+            ) : htmlMapContent ? (
+              <iframe 
+                srcDoc={htmlMapContent}
+                className="w-full h-full border-none"
+                title="Mind Map"
+                sandbox="allow-scripts allow-same-origin allow-popups"
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center bg-slate-950 text-rose-400 font-bold">
+                No se pudo cargar el mapa.
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );
