@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Send, Trash2, Megaphone, Hash, Crown, Shield, GraduationCap, Loader2, User } from 'lucide-react';
 
