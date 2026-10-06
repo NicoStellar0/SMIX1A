@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { BookOpen, BrainCircuit, Plus, Loader2, CheckCircle2, Users, ShieldAlert } from 'lucide-react';
+import { BookOpen, BrainCircuit, Plus, Loader2, CheckCircle2, Users, ShieldAlert, BarChart3, TrendingUp, MessageSquare, UploadCloud } from 'lucide-react';
 
 export default function AdminPage() {
-  const [activeTab, setActiveTab] = useState<'memory_card' | 'mind_map' | 'users'>('memory_card');
+  const [activeTab, setActiveTab] = useState<'memory_card' | 'mind_map' | 'users' | 'analytics'>('memory_card');
   const [title, setTitle] = useState('');
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState('');
@@ -17,13 +17,35 @@ export default function AdminPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
 
+  // Analytics State
+  const [stats, setStats] = useState({ totalTasks: 0, totalMessages: 0, totalMaterials: 0 });
+  const [loadingStats, setLoadingStats] = useState(false);
+
   const supabase = createClient();
 
   useEffect(() => {
     if (activeTab === 'users') {
       fetchUsers();
+    } else if (activeTab === 'analytics') {
+      fetchAnalytics();
     }
   }, [activeTab]);
+
+  const fetchAnalytics = async () => {
+    setLoadingStats(true);
+    const [{ count: tasksCount }, { count: messagesCount }, { count: materialsCount }] = await Promise.all([
+      supabase.from('tasks').select('*', { count: 'exact', head: true }),
+      supabase.from('messages').select('*', { count: 'exact', head: true }),
+      supabase.from('study_materials').select('*', { count: 'exact', head: true }),
+    ]);
+    
+    setStats({
+      totalTasks: tasksCount || 0,
+      totalMessages: messagesCount || 0,
+      totalMaterials: materialsCount || 0
+    });
+    setLoadingStats(false);
+  };
 
   const fetchUsers = async () => {
     setLoadingUsers(true);
@@ -119,11 +141,51 @@ export default function AdminPage() {
             <Users size={18} />
             Manage Users
           </button>
+          <button
+            onClick={() => setActiveTab('analytics')}
+            className={`flex-1 py-4 flex items-center justify-center gap-2 font-bold transition-all ${
+              activeTab === 'analytics' ? 'bg-emerald-500/10 text-emerald-400 border-b-2 border-emerald-500' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'
+            }`}
+          >
+            <BarChart3 size={18} />
+            Analytics
+          </button>
         </div>
 
         {/* Form / Content */}
         <div className="p-8">
-          {activeTab === 'users' ? (
+          {activeTab === 'analytics' ? (
+            <div className="space-y-6">
+              <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2"><TrendingUp className="text-emerald-400" /> Platform Activity</h2>
+              {loadingStats ? (
+                <div className="flex justify-center py-12 text-slate-500"><Loader2 className="animate-spin" /></div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="bg-white/5 border border-white/10 rounded-2xl p-6 flex items-center gap-4 hover:border-cyan-500/50 transition-colors">
+                    <div className="w-12 h-12 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center"><UploadCloud size={24} /></div>
+                    <div>
+                      <div className="text-3xl font-bold text-white">{stats.totalTasks}</div>
+                      <div className="text-slate-400 text-sm font-bold uppercase tracking-wider">Tasks Uploaded</div>
+                    </div>
+                  </div>
+                  <div className="bg-white/5 border border-white/10 rounded-2xl p-6 flex items-center gap-4 hover:border-indigo-500/50 transition-colors">
+                    <div className="w-12 h-12 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center"><MessageSquare size={24} /></div>
+                    <div>
+                      <div className="text-3xl font-bold text-white">{stats.totalMessages}</div>
+                      <div className="text-slate-400 text-sm font-bold uppercase tracking-wider">Messages Sent</div>
+                    </div>
+                  </div>
+                  <div className="bg-white/5 border border-white/10 rounded-2xl p-6 flex items-center gap-4 hover:border-fuchsia-500/50 transition-colors">
+                    <div className="w-12 h-12 rounded-xl bg-fuchsia-500/20 text-fuchsia-400 flex items-center justify-center"><BookOpen size={24} /></div>
+                    <div>
+                      <div className="text-3xl font-bold text-white">{stats.totalMaterials}</div>
+                      <div className="text-slate-400 text-sm font-bold uppercase tracking-wider">Study Materials</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : activeTab === 'users' ? (
             <div className="space-y-6">
               <div className="flex items-center gap-3 mb-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-400">
                 <ShieldAlert size={24} className="shrink-0" />
