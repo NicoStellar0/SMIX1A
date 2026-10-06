@@ -10,8 +10,11 @@ export default function AdminPage() {
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState('');
   const [mindMapUrl, setMindMapUrl] = useState('');
+  const [mindMapFile, setMindMapFile] = useState<File | null>(null);
+  const mindMapFileRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
   
   // User Management State
   const [users, setUsers] = useState<any[]>([]);
@@ -24,12 +27,21 @@ export default function AdminPage() {
   const supabase = createClient();
 
   useEffect(() => {
+    const fetchUserRole = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+        if (data) setCurrentUserRole(data.role);
+      }
+    };
+    fetchUserRole();
+
     if (activeTab === 'users') {
       fetchUsers();
     } else if (activeTab === 'analytics') {
       fetchAnalytics();
     }
-  }, [activeTab]);
+  }, [activeTab, supabase]);
 
   const fetchAnalytics = async () => {
     setLoadingStats(true);
@@ -77,9 +89,30 @@ export default function AdminPage() {
       return;
     }
 
+    let finalUrl = mindMapUrl;
+
+    if (activeTab === 'mind_map' && mindMapFile) {
+      const fileExt = mindMapFile.name.split('.').pop();
+      const fileName = `${user.id}-map-${Math.random()}.${fileExt}`;
+      const filePath = `mindmaps/${fileName}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('tasks')
+        .upload(filePath, mindMapFile);
+        
+      if (uploadError) {
+        alert('Error subiendo archivo: ' + uploadError.message);
+        setLoading(false);
+        return;
+      }
+      
+      const { data: { publicUrl } } = supabase.storage.from('tasks').getPublicUrl(filePath);
+      finalUrl = publicUrl;
+    }
+
     const content = activeTab === 'memory_card' 
       ? { question, answer } 
-      : { url: mindMapUrl };
+      : { url: finalUrl };
 
     const { error } = await supabase.from('study_materials').insert({
       title,
@@ -96,11 +129,18 @@ export default function AdminPage() {
       setQuestion('');
       setAnswer('');
       setMindMapUrl('');
+      setMindMapFile(null);
+      if (mindMapFileRef.current) mindMapFileRef.current.value = '';
       setTimeout(() => setSuccess(false), 3000);
     } else {
       alert('Error saving material: ' + error.message);
     }
   };
+
+  // Protegemos la página visualmente (el servidor y layout ya ayudan, pero por seguridad extra)
+  if (currentUserRole === 'student') {
+    return <div className="p-8 text-center text-rose-400 font-bold">No tienes permisos para ver esta página.</div>;
+  }
 
   return (
     <div className="p-8 max-w-4xl mx-auto">
@@ -136,7 +176,7 @@ export default function AdminPage() {
             onClick={() => setActiveTab('users')}
             className={`flex-1 py-4 flex items-center justify-center gap-2 font-bold transition-all ${
               activeTab === 'users' ? 'bg-amber-500/10 text-amber-400 border-b-2 border-amber-500' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'
-            }`}
+            } ${currentUserRole !== 'admin' ? 'hidden' : ''}`}
           >
             <Users size={18} />
             Gestionar Usuarios
@@ -145,7 +185,7 @@ export default function AdminPage() {
             onClick={() => setActiveTab('analytics')}
             className={`flex-1 py-4 flex items-center justify-center gap-2 font-bold transition-all ${
               activeTab === 'analytics' ? 'bg-emerald-500/10 text-emerald-400 border-b-2 border-emerald-500' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'
-            }`}
+            } ${currentUserRole !== 'admin' ? 'hidden' : ''}`}
           >
             <BarChart3 size={18} />
             Analíticas
@@ -277,16 +317,42 @@ export default function AdminPage() {
                 </div>
               </>
             ) : (
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-bold text-slate-400 uppercase tracking-wider">URL de la Imagen del Mapa Mental</label>
-                <input 
-                  type="url" 
-                  required
-                  value={mindMapUrl}
-                  onChange={(e) => setMindMapUrl(e.target.value)}
-                  className="bg-slate-900/50 border border-slate-700 text-white rounded-xl py-3 px-4 outline-none focus:border-fuchsia-500 focus:ring-1 focus:ring-fuchsia-500 transition-all"
-                  placeholder="https://ejemplo.com/mapa.png"
-                />
+              <div className="flex flex-col gap-4">
+                <div className="bg-slate-900/30 border border-slate-700 border-dashed rounded-xl p-6 flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-slate-900/50 transition-colors" onClick={() => mindMapFileRef.current?.click()}>
+                  <input 
+                    type="file" 
+                    ref={mindMapFileRef}
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files[0]) {
+                        setMindMapFile(e.target.files[0]);
+                        setMindMapUrl('');
+                      }
+                    }}
+                    className="hidden"
+                    accept=".html,image/*"
+                  />
+                  <UploadCloud size={32} className="text-slate-500" />
+                  <p className="text-slate-300 font-bold text-center">Sube el Archivo HTML o la Imagen del Mapa Mental</p>
+                  <p className="text-slate-500 text-sm">haz clic para buscar en tus carpetas</p>
+                  {mindMapFile && <p className="text-fuchsia-400 font-bold mt-2 border border-fuchsia-500/30 bg-fuchsia-500/10 px-3 py-1 rounded-full">{mindMapFile.name}</p>}
+                </div>
+
+                <div className="text-center text-slate-500 font-bold text-sm uppercase tracking-wider">O</div>
+
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-bold text-slate-400 uppercase tracking-wider">URL de la Imagen del Mapa Mental</label>
+                  <input 
+                    type="url" 
+                    value={mindMapUrl}
+                    onChange={(e) => {
+                      setMindMapUrl(e.target.value);
+                      setMindMapFile(null);
+                      if (mindMapFileRef.current) mindMapFileRef.current.value = '';
+                    }}
+                    className="bg-slate-900/50 border border-slate-700 text-white rounded-xl py-3 px-4 outline-none focus:border-fuchsia-500 focus:ring-1 focus:ring-fuchsia-500 transition-all"
+                    placeholder="https://ejemplo.com/mapa.png (si no quieres subir archivo)"
+                  />
+                </div>
               </div>
             )}
 

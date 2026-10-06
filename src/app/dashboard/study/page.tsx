@@ -160,11 +160,25 @@ export default function StudyPage() {
                   <div key={map.id} className="bg-white/5 border border-white/10 rounded-3xl overflow-hidden shadow-xl hover:border-fuchsia-500/30 transition-colors group">
                     <div className="h-48 bg-black/50 relative overflow-hidden flex items-center justify-center border-b border-white/10">
                       {map.content.url ? (
-                        <img 
-                          src={map.content.url} 
-                          alt={map.title} 
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        />
+                        map.content.url.toLowerCase().includes('.html') ? (
+                          <>
+                            <div className="absolute inset-0 bg-transparent z-10" />
+                            <iframe 
+                              src={map.content.url} 
+                              className="w-full h-[500px] transform scale-50 origin-top-left pointer-events-none group-hover:scale-55 transition-transform duration-500" 
+                              scrolling="no"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent z-10 flex items-end p-4">
+                              <span className="text-xs font-bold text-fuchsia-400 bg-fuchsia-400/20 px-2 py-1 rounded-md border border-fuchsia-400/30">Mapa Interactivo HTML</span>
+                            </div>
+                          </>
+                        ) : (
+                          <img 
+                            src={map.content.url} 
+                            alt={map.title} 
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                        )
                       ) : (
                         <BrainCircuit size={48} className="text-slate-700" />
                       )}
