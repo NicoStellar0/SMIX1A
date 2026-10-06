@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { Send, Trash2, Megaphone, Hash, Crown, Shield, GraduationCap, Loader2, User } from 'lucide-react';
+import { Send, Trash2, Megaphone, Hash, Crown, Shield, GraduationCap, Loader2, User, BarChart2 } from 'lucide-react';
 
 type Role = 'admin' | 'delegate' | 'sub-delegate' | 'student';
 
@@ -14,10 +14,11 @@ type Profile = {
 
 type Message = {
   id: string;
-  content: string;
   channel: string;
   created_at: string;
   author_id: string;
+  type?: string;
+  metadata?: any;
   profiles: Profile;
 };
 
@@ -34,6 +35,7 @@ export default function ChatPage() {
   const [loading, setLoading] = useState(true);
   const [isLocked, setIsLocked] = useState(false);
   const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [pollVotes, setPollVotes] = useState<Record<string, { option_index: number, user_id: string }[]>>({});
   
   const supabase = createClient();
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -67,6 +69,20 @@ export default function ChatPage() {
         
       if (!msgError && msgs) {
         setMessages(msgs as unknown as Message[]);
+        
+        // Fetch votes for polls
+        const pollIds = msgs.filter(m => m.type === 'poll').map(m => m.id);
+        if (pollIds.length > 0) {
+          const { data: votes } = await supabase.from('poll_votes').select('*').in('message_id', pollIds);
+          if (votes) {
+            const votesMap: any = {};
+            votes.forEach(v => {
+              if (!votesMap[v.message_id]) votesMap[v.message_id] = [];
+              votesMap[v.message_id].push(v);
+            });
+            setPollVotes(votesMap);
+          }
+        }
       }
 
       const { data: settings } = await supabase
@@ -116,6 +132,31 @@ export default function ChatPage() {
           setIsLocked(payload.new.is_locked);
         }
       )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'poll_votes' },
+        (payload) => {
+          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+            setPollVotes(prev => {
+              const msgId = payload.new.message_id;
+              const currentVotes = prev[msgId] || [];
+              return { 
+                ...prev, 
+                [msgId]: [...currentVotes.filter(v => v.user_id !== payload.new.user_id), payload.new] 
+              };
+            });
+          } else if (payload.eventType === 'DELETE') {
+            setPollVotes(prev => {
+              const msgId = payload.old.message_id;
+              const currentVotes = prev[msgId] || [];
+              return { 
+                ...prev, 
+                [msgId]: currentVotes.filter(v => v.id !== payload.old.id) 
+              };
+            });
+          }
+        }
+      )
       .subscribe();
 
     return () => {
@@ -154,6 +195,30 @@ export default function ChatPage() {
         await supabase.from('channel_settings').update({ is_locked: false }).eq('channel', activeChannel);
         return;
       }
+      if (content.startsWith('/poll ')) {
+        // Format: /poll Pregunta? Opción1, Opción2, Opción3
+        const match = content.match(/^\/poll\s+([^?]+(?:\?)?)\s+(.+)$/);
+        if (match) {
+          const question = match[1].trim();
+          const options = match[2].split(',').map(s => s.trim()).filter(Boolean);
+          if (options.length >= 2) {
+            await supabase.from('messages').insert({
+              content: question,
+              type: 'poll',
+              metadata: { options },
+              channel: activeChannel,
+              author_id: currentUser.id,
+            });
+            return;
+          } else {
+            alert('Una encuesta necesita al menos 2 opciones separadas por comas.');
+            return;
+          }
+        } else {
+          alert('Formato de encuesta inválido. Usa: /poll ¿Pregunta? Opcion 1, Opcion 2');
+          return;
+        }
+      }
     }
 
     await supabase.from('messages').insert({
@@ -161,6 +226,15 @@ export default function ChatPage() {
       channel: activeChannel,
       author_id: currentUser.id,
     });
+  };
+
+  const handleVote = async (messageId: string, optionIndex: number) => {
+    if (!currentUser) return;
+    await supabase.from('poll_votes').upsert({
+      message_id: messageId,
+      user_id: currentUser.id,
+      option_index: optionIndex
+    }, { onConflict: 'message_id,user_id' });
   };
 
   const handleDelete = async (id: string) => {
@@ -329,8 +403,49 @@ export default function ChatPage() {
                         isAdminOrDelegate 
                           ? 'bg-gradient-to-r from-indigo-500/20 to-fuchsia-500/20 border border-indigo-500/30 text-white' 
                           : 'bg-slate-800/50 border border-slate-700/50 text-slate-200'
-                      } ${isMe ? 'rounded-tr-sm' : 'rounded-tl-sm'}`}>
-                        {renderRichText(msg.content)}
+                      } ${isMe ? 'rounded-tr-sm' : 'rounded-tl-sm'} ${msg.type === 'poll' ? 'w-64' : ''}`}>
+                        
+                        {msg.type === 'poll' ? (
+                          <div className="flex flex-col gap-3">
+                            <div className="font-bold text-base flex items-center gap-2">
+                              <BarChart2 className={isAdminOrDelegate ? 'text-fuchsia-400' : 'text-slate-400'} size={18} />
+                              {msg.content}
+                            </div>
+                            <div className="flex flex-col gap-2 mt-1">
+                              {msg.metadata?.options?.map((opt: string, idx: number) => {
+                                const votesForOption = pollVotes[msg.id]?.filter(v => v.option_index === idx).length || 0;
+                                const totalVotes = pollVotes[msg.id]?.length || 0;
+                                const percentage = totalVotes === 0 ? 0 : Math.round((votesForOption / totalVotes) * 100);
+                                const hasVotedThis = pollVotes[msg.id]?.some(v => v.user_id === currentUser?.id && v.option_index === idx);
+
+                                return (
+                                  <button
+                                    key={idx}
+                                    onClick={() => handleVote(msg.id, idx)}
+                                    className={`relative overflow-hidden w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-all border ${
+                                      hasVotedThis 
+                                        ? 'border-indigo-400/50 bg-indigo-500/20 text-white' 
+                                        : 'border-white/10 bg-black/20 text-slate-300 hover:bg-white/10'
+                                    }`}
+                                  >
+                                    <div 
+                                      className="absolute left-0 top-0 bottom-0 bg-indigo-500/20 transition-all duration-500" 
+                                      style={{ width: `${percentage}%` }}
+                                    />
+                                    <div className="relative flex justify-between">
+                                      <span>{opt}</span>
+                                      <span>{votesForOption} ({percentage}%)</span>
+                                    </div>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                            <div className="text-[10px] text-slate-500 text-right mt-1">Total votos: {pollVotes[msg.id]?.length || 0}</div>
+                          </div>
+                        ) : (
+                          renderRichText(msg.content)
+                        )}
+
                       </div>
 
                       {!isMe && isModerator && (
@@ -361,7 +476,7 @@ export default function ChatPage() {
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder={isModerator ? `Mensaje #${activeChannel}... (Prueba /clear, /lock, /unlock)` : `Mensaje #${activeChannel}...`}
+                placeholder={isModerator ? `Mensaje #${activeChannel}... (Usa /poll Pregunta? Op 1, Op 2)` : `Mensaje #${activeChannel}...`}
                 className="w-full bg-slate-900/50 border border-slate-700 text-white rounded-2xl py-4 pl-6 pr-14 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-500"
               />
               <button 
