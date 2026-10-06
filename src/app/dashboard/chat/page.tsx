@@ -40,6 +40,11 @@ export default function ChatPage() {
   
   const supabase = createClient();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const profilesRef = useRef<Profile[]>([]);
+
+  useEffect(() => {
+    profilesRef.current = profiles;
+  }, [profiles]);
 
   useEffect(() => {
     // 1. Fetch current user profile and all profiles for DMs
@@ -107,15 +112,19 @@ export default function ChatPage() {
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messages', filter: `channel=eq.${activeChannel}` },
         async (payload) => {
-          // Fetch the profile for the new message
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('id, full_name, role')
-            .eq('id', payload.new.author_id)
-            .single();
+          // Buscamos el perfil de forma síncrona en memoria para renderizado INMEDIATO (0ms delay)
+          const authorProfile = profilesRef.current.find(p => p.id === payload.new.author_id) || { id: payload.new.author_id, full_name: 'Usuario', role: 'student' as Role };
 
-          const newMessage = { ...payload.new, profiles: profileData } as Message;
-          setMessages((prev) => [...prev, newMessage]);
+          const newMessage = { ...payload.new, profiles: authorProfile } as Message;
+          
+          setMessages((prev) => {
+            // Evitamos duplicados si el mensaje ya está por Optimistic UI
+            const isOptimistic = prev.some(m => m.id.startsWith('temp_') && m.content === payload.new.content && m.author_id === payload.new.author_id);
+            if (isOptimistic) {
+              return prev.map(m => (m.id.startsWith('temp_') && m.content === payload.new.content && m.author_id === payload.new.author_id) ? newMessage : m);
+            }
+            return [...prev, newMessage];
+          });
           scrollToBottom();
         }
       )
@@ -222,6 +231,20 @@ export default function ChatPage() {
       }
     }
 
+    // Optimistic UI update for immediate feedback
+    const tempId = `temp_${Date.now()}`;
+    const optimisticMessage: Message = {
+      id: tempId,
+      content,
+      channel: activeChannel,
+      author_id: currentUser.id,
+      created_at: new Date().toISOString(),
+      profiles: currentUser
+    };
+    
+    setMessages(prev => [...prev, optimisticMessage]);
+    scrollToBottom();
+
     await supabase.from('messages').insert({
       content,
       channel: activeChannel,
@@ -251,6 +274,10 @@ export default function ChatPage() {
     isModerator || // Moderators can always write
     (activeChannel === 'general' && !isLocked) ||
     isDM; // Can write in DMs
+
+  const formatTime = (isoString: string) => {
+    return new Date(isoString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
 
   const renderRichText = (text: string) => {
     return text.split('\n').map((line, i) => (
@@ -363,8 +390,9 @@ export default function ChatPage() {
                       )}
                     </div>
                     <p className="text-slate-200 text-lg leading-relaxed">{renderRichText(msg.content)}</p>
-                    <div className="mt-4 text-xs text-slate-500 font-medium">
-                      {new Date(msg.created_at).toLocaleString()}
+                    <div className="mt-4 text-xs flex justify-between items-center opacity-75 font-medium">
+                      <span className="text-slate-500">{new Date(msg.created_at).toLocaleDateString()}</span>
+                      <span className="text-fuchsia-400">{formatTime(msg.created_at)}</span>
                     </div>
                   </div>
                 );
@@ -418,33 +446,52 @@ export default function ChatPage() {
                                 const totalVotes = pollVotes[msg.id]?.length || 0;
                                 const percentage = totalVotes === 0 ? 0 : Math.round((votesForOption / totalVotes) * 100);
                                 const hasVotedThis = pollVotes[msg.id]?.some(v => v.user_id === currentUser?.id && v.option_index === idx);
+                                
+                                const voters = pollVotes[msg.id]?.filter(v => v.option_index === idx).map(v => {
+                                  const p = profilesRef.current.find(pr => pr.id === v.user_id);
+                                  return p?.full_name?.split(' ')[0] || 'Alguien';
+                                }) || [];
 
                                 return (
-                                  <button
-                                    key={idx}
-                                    onClick={() => handleVote(msg.id, idx)}
-                                    className={`relative overflow-hidden w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-all border ${
-                                      hasVotedThis 
-                                        ? 'border-indigo-400/50 bg-indigo-500/20 text-white' 
-                                        : 'border-white/10 bg-black/20 text-slate-300 hover:bg-white/10'
-                                    }`}
-                                  >
-                                    <div 
-                                      className="absolute left-0 top-0 bottom-0 bg-indigo-500/20 transition-all duration-500" 
-                                      style={{ width: `${percentage}%` }}
-                                    />
-                                    <div className="relative flex justify-between">
-                                      <span>{opt}</span>
-                                      <span>{votesForOption} ({percentage}%)</span>
-                                    </div>
-                                  </button>
+                                  <div key={idx}>
+                                    <button
+                                      onClick={() => handleVote(msg.id, idx)}
+                                      className={`relative overflow-hidden w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-all border ${
+                                        hasVotedThis 
+                                          ? 'border-indigo-400/50 bg-indigo-500/20 text-white' 
+                                          : 'border-white/10 bg-black/20 text-slate-300 hover:bg-white/10'
+                                      }`}
+                                    >
+                                      <div 
+                                        className="absolute left-0 top-0 bottom-0 bg-indigo-500/20 transition-all duration-500" 
+                                        style={{ width: `${percentage}%` }}
+                                      />
+                                      <div className="relative flex justify-between">
+                                        <span>{opt}</span>
+                                        <span>{votesForOption} ({percentage}%)</span>
+                                      </div>
+                                    </button>
+                                    {voters.length > 0 && (
+                                      <div className="text-[10px] text-slate-500 mt-1 pl-2 mb-2 font-medium">
+                                        Votaron: <span className="text-slate-400">{voters.join(', ')}</span>
+                                      </div>
+                                    )}
+                                  </div>
                                 );
                               })}
                             </div>
-                            <div className="text-[10px] text-slate-500 text-right mt-1">Total votos: {pollVotes[msg.id]?.length || 0}</div>
+                            <div className="text-[10px] text-slate-500 flex justify-between mt-1 items-center">
+                              <span>Total votos: {pollVotes[msg.id]?.length || 0}</span>
+                              <span className="opacity-50">{formatTime(msg.created_at)}</span>
+                            </div>
                           </div>
                         ) : (
-                          renderRichText(msg.content)
+                          <div>
+                            {renderRichText(msg.content)}
+                            <div className={`text-[10px] mt-1 text-right font-medium opacity-50 ${isMe ? 'text-indigo-200' : 'text-slate-400'}`}>
+                              {formatTime(msg.created_at)}
+                            </div>
+                          </div>
                         )}
 
                       </div>
