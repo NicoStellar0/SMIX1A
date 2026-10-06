@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, BookOpen, UploadCloud, Shield, LogOut, MessageSquare, Eye, Library } from 'lucide-react';
+import { LayoutDashboard, BookOpen, UploadCloud, Shield, LogOut, MessageSquare, Eye, Library, Moon, Sun } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useEffect, useState } from 'react';
 
@@ -10,8 +10,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname();
   const supabase = createClient();
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [theme, setTheme] = useState<'dark'|'light'>('dark');
 
   useEffect(() => {
+    // Read theme from local storage
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'light') {
+      setTheme('light');
+      document.documentElement.setAttribute('data-theme', 'light');
+    }
+
     const fetchRole = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
@@ -21,6 +29,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     };
     fetchRole();
   }, [supabase]);
+
+  const toggleTheme = () => {
+    const newTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(newTheme);
+    localStorage.setItem('theme', newTheme);
+    if (newTheme === 'light') {
+      document.documentElement.setAttribute('data-theme', 'light');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+    }
+  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -107,10 +126,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </nav>
         </div>
 
-        <div className="p-6">
+        <div className="p-6 space-y-2">
+          <button 
+            onClick={toggleTheme}
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-colors font-medium"
+          >
+            {theme === 'dark' ? <><Sun size={18} /> Light Mode</> : <><Moon size={18} /> Dark Mode</>}
+          </button>
           <button 
             onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-slate-400 hover:text-red-400 hover:bg-red-400/10 transition-colors font-medium"
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-rose-400/10 transition-colors font-medium"
           >
             <LogOut size={18} />
             Sign Out

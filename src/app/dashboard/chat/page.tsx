@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { Send, Trash2, Megaphone, Hash, Crown, Shield, GraduationCap, Loader2 } from 'lucide-react';
+import { Send, Trash2, Megaphone, Hash, Crown, Shield, GraduationCap, Loader2, User } from 'lucide-react';
 
 type Role = 'admin' | 'delegate' | 'sub-delegate' | 'student';
 
@@ -27,24 +28,27 @@ type ChannelSetting = {
 };
 
 export default function ChatPage() {
-  const [activeChannel, setActiveChannel] = useState<'general' | 'announcements'>('general');
+  const [activeChannel, setActiveChannel] = useState<string>('general');
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [currentUser, setCurrentUser] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isLocked, setIsLocked] = useState(false);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
   
   const supabase = createClient();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // 1. Fetch current user profile
+    // 1. Fetch current user profile and all profiles for DMs
     const fetchUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single();
         setCurrentUser(data);
       }
+      const { data: allProfiles } = await supabase.from('profiles').select('*').order('full_name');
+      if (allProfiles) setProfiles(allProfiles as Profile[]);
     };
 
     fetchUser();
@@ -167,15 +171,43 @@ export default function ChatPage() {
 
   const isModerator = currentUser?.role === 'admin' || currentUser?.role === 'delegate' || currentUser?.role === 'sub-delegate';
   
+  const isDM = activeChannel.startsWith('dm_');
+
   const canWrite = 
     isModerator || // Moderators can always write
-    (activeChannel === 'general' && !isLocked); // Students can write in general if not locked
+    (activeChannel === 'general' && !isLocked) ||
+    isDM; // Can write in DMs
+
+  const renderRichText = (text: string) => {
+    return text.split('\n').map((line, i) => (
+      <span key={i}>
+        {line.split(/(\*\*.*?\*\*|\*.*?\*|`.*?`)/).map((part, j) => {
+          if (part.startsWith('**') && part.endsWith('**')) return <strong key={j}>{part.slice(2, -2)}</strong>;
+          if (part.startsWith('*') && part.endsWith('*')) return <em key={j}>{part.slice(1, -1)}</em>;
+          if (part.startsWith('`') && part.endsWith('`')) return <code key={j} className="bg-black/30 px-1 py-0.5 rounded text-indigo-300 font-mono text-xs">{part.slice(1, -1)}</code>;
+          return part;
+        })}
+        {i < text.split('\n').length - 1 && <br />}
+      </span>
+    ));
+  };
+
+  const getChannelName = () => {
+    if (activeChannel === 'general') return 'General Chat';
+    if (activeChannel === 'announcements') return 'Announcements';
+    if (isDM) {
+      const otherUserId = activeChannel.replace('dm_', '').replace(currentUser?.id || '', '').replace('_', '');
+      const otherUser = profiles.find(p => p.id === otherUserId);
+      return `DM: ${otherUser?.full_name || 'User'}`;
+    }
+    return activeChannel;
+  };
 
   return (
     <div className="flex h-[calc(100vh-4rem)] md:h-screen bg-slate-950 p-6 gap-6 text-white overflow-hidden">
       
       {/* Channels Sidebar */}
-      <div className="w-64 bg-white/5 border border-white/10 rounded-3xl p-4 backdrop-blur-xl flex flex-col gap-2">
+      <div className="w-64 bg-white/5 border border-white/10 rounded-3xl p-4 backdrop-blur-xl flex flex-col gap-2 overflow-y-auto">
         <h2 className="px-4 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Channels</h2>
         
         <button 
@@ -193,6 +225,23 @@ export default function ChatPage() {
           <Megaphone size={18} />
           <span className="font-medium">Announcements</span>
         </button>
+
+        <h2 className="px-4 text-xs font-bold text-slate-500 uppercase tracking-wider mt-4 mb-2">Direct Messages</h2>
+        {profiles.filter(p => p.id !== currentUser?.id).map(p => {
+          const dmId = `dm_${[currentUser?.id || '', p.id].sort().join('_')}`;
+          return (
+            <button 
+              key={p.id}
+              onClick={() => setActiveChannel(dmId)}
+              className={`flex items-center gap-3 px-4 py-2 rounded-2xl transition-all ${activeChannel === dmId ? 'bg-cyan-500/20 text-cyan-300 shadow-inner' : 'hover:bg-white/5 text-slate-400'}`}
+            >
+              <div className="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center shrink-0">
+                <User size={12} className="text-slate-400" />
+              </div>
+              <span className="font-medium text-sm truncate">{p.full_name}</span>
+            </button>
+          )
+        })}
       </div>
 
       {/* Main Chat Area */}
@@ -200,8 +249,10 @@ export default function ChatPage() {
         
         {/* Header */}
         <div className="h-16 border-b border-white/10 flex items-center px-6 gap-3 shrink-0">
-          {activeChannel === 'general' ? <Hash className="text-indigo-400" /> : <Megaphone className="text-fuchsia-400" />}
-          <h2 className="text-xl font-bold">{activeChannel === 'general' ? 'General Chat' : 'Announcements'}</h2>
+          {activeChannel === 'general' ? <Hash className="text-indigo-400" /> : 
+           activeChannel === 'announcements' ? <Megaphone className="text-fuchsia-400" /> :
+           <User className="text-cyan-400" />}
+          <h2 className="text-xl font-bold">{getChannelName()}</h2>
         </div>
 
         {/* Messages */}
@@ -237,7 +288,7 @@ export default function ChatPage() {
                         </button>
                       )}
                     </div>
-                    <p className="text-slate-200 text-lg leading-relaxed">{msg.content}</p>
+                    <p className="text-slate-200 text-lg leading-relaxed">{renderRichText(msg.content)}</p>
                     <div className="mt-4 text-xs text-slate-500 font-medium">
                       {new Date(msg.created_at).toLocaleString()}
                     </div>
@@ -280,7 +331,7 @@ export default function ChatPage() {
                           ? 'bg-gradient-to-r from-indigo-500/20 to-fuchsia-500/20 border border-indigo-500/30 text-white' 
                           : 'bg-slate-800/50 border border-slate-700/50 text-slate-200'
                       } ${isMe ? 'rounded-tr-sm' : 'rounded-tl-sm'}`}>
-                        {msg.content}
+                        {renderRichText(msg.content)}
                       </div>
 
                       {!isMe && isModerator && (
