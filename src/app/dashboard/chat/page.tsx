@@ -21,12 +21,18 @@ type Message = {
   profiles: Profile;
 };
 
+type ChannelSetting = {
+  channel: string;
+  is_locked: boolean;
+};
+
 export default function ChatPage() {
   const [activeChannel, setActiveChannel] = useState<'general' | 'announcements'>('general');
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [currentUser, setCurrentUser] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isLocked, setIsLocked] = useState(false);
   
   const supabase = createClient();
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -45,25 +51,35 @@ export default function ChatPage() {
   }, [supabase]);
 
   useEffect(() => {
-    // 2. Fetch messages for the active channel
-    const fetchMessages = async () => {
-      setMessages([]); // Clear messages immediately on channel switch
+    // 2. Fetch messages and channel settings
+    const fetchData = async () => {
+      setMessages([]); 
       setLoading(true);
-      const { data, error } = await supabase
+      
+      const { data: msgs, error: msgError } = await supabase
         .from('messages')
         .select('*, profiles(id, full_name, role)')
         .eq('channel', activeChannel)
         .order('created_at', { ascending: true });
         
-      if (!error && data) {
-        // Suppress TS error since we know profiles is joined as an object, not array
-        setMessages(data as unknown as Message[]);
+      if (!msgError && msgs) {
+        setMessages(msgs as unknown as Message[]);
       }
+
+      const { data: settings } = await supabase
+        .from('channel_settings')
+        .select('is_locked')
+        .eq('channel', activeChannel)
+        .single();
+        
+      if (settings) setIsLocked(settings.is_locked);
+      else setIsLocked(false);
+
       setLoading(false);
       scrollToBottom();
     };
 
-    fetchMessages();
+    fetchData();
 
     // 3. Set up Realtime Subscription
     const channel = supabase.channel(`chat_${activeChannel}`)
@@ -90,6 +106,13 @@ export default function ChatPage() {
           setMessages((prev) => prev.filter(msg => msg.id !== payload.old.id));
         }
       )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'channel_settings', filter: `channel=eq.${activeChannel}` },
+        (payload) => {
+          setIsLocked(payload.new.is_locked);
+        }
+      )
       .subscribe();
 
     return () => {
@@ -109,6 +132,26 @@ export default function ChatPage() {
 
     const content = input.trim();
     setInput('');
+    const isModerator = currentUser.role === 'admin' || currentUser.role === 'delegate' || currentUser.role === 'sub-delegate';
+
+    // Slash Commands for Moderators
+    if (content.startsWith('/') && isModerator) {
+      if (content === '/clear') {
+        if (confirm('Are you sure you want to clear ALL messages in this channel?')) {
+          await supabase.from('messages').delete().eq('channel', activeChannel);
+          setMessages([]); // Clear locally to be faster
+        }
+        return;
+      }
+      if (content === '/lock') {
+        await supabase.from('channel_settings').update({ is_locked: true }).eq('channel', activeChannel);
+        return;
+      }
+      if (content === '/unlock') {
+        await supabase.from('channel_settings').update({ is_locked: false }).eq('channel', activeChannel);
+        return;
+      }
+    }
 
     await supabase.from('messages').insert({
       content,
@@ -122,11 +165,11 @@ export default function ChatPage() {
     await supabase.from('messages').delete().eq('id', id);
   };
 
-  const canWrite = 
-    activeChannel === 'general' || 
-    (activeChannel === 'announcements' && (currentUser?.role === 'admin' || currentUser?.role === 'delegate' || currentUser?.role === 'sub-delegate'));
-
   const isModerator = currentUser?.role === 'admin' || currentUser?.role === 'delegate' || currentUser?.role === 'sub-delegate';
+  
+  const canWrite = 
+    isModerator || // Moderators can always write
+    (activeChannel === 'general' && !isLocked); // Students can write in general if not locked
 
   return (
     <div className="flex h-[calc(100vh-4rem)] md:h-screen bg-slate-950 p-6 gap-6 text-white overflow-hidden">
@@ -257,13 +300,18 @@ export default function ChatPage() {
 
         {/* Input Area */}
         <div className="p-4 bg-black/20 border-t border-white/5 shrink-0">
+          {isLocked && !isModerator && (
+            <div className="mb-3 text-center text-rose-400 font-bold bg-rose-500/10 py-2 rounded-xl border border-rose-500/20 shadow-inner">
+              🔒 This channel is currently locked by an Admin.
+            </div>
+          )}
           {canWrite ? (
             <form onSubmit={handleSendMessage} className="relative flex items-center">
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder={`Message #${activeChannel}...`}
+                placeholder={isModerator ? `Message #${activeChannel}... (Try /clear, /lock, /unlock)` : `Message #${activeChannel}...`}
                 className="w-full bg-slate-900/50 border border-slate-700 text-white rounded-2xl py-4 pl-6 pr-14 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-500"
               />
               <button 
