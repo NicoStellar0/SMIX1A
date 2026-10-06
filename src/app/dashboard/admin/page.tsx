@@ -99,7 +99,7 @@ export default function AdminPage() {
       const { error: uploadError } = await supabase.storage
         .from('tasks')
         .upload(filePath, mindMapFile, {
-          contentType: fileExt === 'html' ? 'text/html' : (mindMapFile.type || 'application/octet-stream')
+          contentType: fileExt === 'html' ? 'text/html; charset=UTF-8' : (mindMapFile.type || 'application/octet-stream')
         });
         
       if (uploadError) {
