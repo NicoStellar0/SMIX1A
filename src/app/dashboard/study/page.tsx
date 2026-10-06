@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { BookOpen, BrainCircuit, Loader2, Sparkles, ChevronRight, ChevronDown } from 'lucide-react';
+import { BookOpen, BrainCircuit, Loader2, Sparkles, ChevronRight, Trash2 } from 'lucide-react';
 
 type Material = {
   id: string;
@@ -16,11 +16,20 @@ export default function StudyPage() {
   const [materials, setMaterials] = useState<Material[]>([]);
   const [loading, setLoading] = useState(true);
   const [flippedCards, setFlippedCards] = useState<Record<string, boolean>>({});
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   const supabase = createClient();
 
   useEffect(() => {
-    const fetchMaterials = async () => {
+    const fetchData = async () => {
+      // Get role
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+        if (profile) setUserRole(profile.role);
+      }
+
+      // Get materials
       const { data, error } = await supabase
         .from('study_materials')
         .select('*')
@@ -32,16 +41,26 @@ export default function StudyPage() {
       setLoading(false);
     };
 
-    fetchMaterials();
+    fetchData();
   }, [supabase]);
 
-  const toggleFlip = (id: string) => {
+  const toggleFlip = (id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
     setFlippedCards(prev => ({
       ...prev,
       [id]: !prev[id]
     }));
   };
 
+  const handleDelete = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirm('Delete this study material?')) return;
+    await supabase.from('study_materials').delete().eq('id', id);
+    setMaterials(prev => prev.filter(m => m.id !== id));
+  };
+
+  const isModerator = userRole === 'admin' || userRole === 'delegate' || userRole === 'sub-delegate';
+  
   const memoryCards = materials.filter(m => m.type === 'memory_card');
   const mindMaps = materials.filter(m => m.type === 'mind_map');
 
@@ -93,7 +112,14 @@ export default function StudyPage() {
                           <div>
                             <div className="text-xs font-bold uppercase tracking-wider text-indigo-400 mb-4 flex justify-between">
                               <span>Question</span>
-                              <span className="text-slate-500 truncate ml-4 max-w-[120px]">{card.title}</span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-slate-500 truncate max-w-[120px]">{card.title}</span>
+                                {isModerator && (
+                                  <button onClick={(e) => handleDelete(card.id, e)} className="text-slate-600 hover:text-rose-400 p-1 bg-black/20 rounded-lg transition-colors z-10 relative">
+                                    <Trash2 size={14} />
+                                  </button>
+                                )}
+                              </div>
                             </div>
                             <h3 className="text-xl font-medium text-white">{card.content.question}</h3>
                           </div>
@@ -144,15 +170,22 @@ export default function StudyPage() {
                       )}
                     </div>
                     <div className="p-6 flex justify-between items-center">
-                      <h3 className="text-lg font-bold text-white">{map.title}</h3>
-                      <a 
-                        href={map.content.url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="px-4 py-2 bg-fuchsia-500/20 text-fuchsia-300 rounded-xl text-sm font-bold hover:bg-fuchsia-500/30 transition-colors"
-                      >
-                        View Full Map
-                      </a>
+                      <h3 className="text-lg font-bold text-white truncate max-w-[50%]">{map.title}</h3>
+                      <div className="flex items-center gap-2">
+                        {isModerator && (
+                          <button onClick={(e) => handleDelete(map.id, e)} className="px-3 py-2 bg-rose-500/10 text-rose-400 rounded-xl hover:bg-rose-500 hover:text-white transition-colors" title="Delete Mind Map">
+                            <Trash2 size={16} />
+                          </button>
+                        )}
+                        <a 
+                          href={map.content.url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="px-4 py-2 bg-fuchsia-500/20 text-fuchsia-300 rounded-xl text-sm font-bold hover:bg-fuchsia-500/30 transition-colors"
+                        >
+                          View Full Map
+                        </a>
+                      </div>
                     </div>
                   </div>
                 ))}

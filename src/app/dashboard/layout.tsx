@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, BookOpen, UploadCloud, Shield, LogOut, MessageSquare, Eye } from 'lucide-react';
+import { LayoutDashboard, BookOpen, UploadCloud, Shield, LogOut, MessageSquare, Eye, Library } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useEffect, useState } from 'react';
 
@@ -32,6 +32,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { name: 'Class Chat', href: '/dashboard/chat', icon: MessageSquare },
     { name: 'Study Section', href: '/dashboard/study', icon: BookOpen },
     { name: 'Upload Task', href: '/dashboard/upload', icon: UploadCloud },
+    { name: 'Task Gallery', href: '/dashboard/gallery', icon: Library },
   ];
 
   const adminNav = [

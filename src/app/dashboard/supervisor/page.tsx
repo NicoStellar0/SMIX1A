@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { Eye, File, ImageIcon, Loader2, Download } from 'lucide-react';
+import { Eye, File, ImageIcon, Loader2, Trash2 } from 'lucide-react';
 
 type Task = {
   id: string;
@@ -37,6 +37,29 @@ export default function SupervisorPage() {
 
     fetchTasks();
   }, [supabase]);
+
+  const handleDelete = async (id: string, file_url: string) => {
+    if (!confirm('Are you sure you want to delete this task? This cannot be undone.')) return;
+    
+    // Attempt to extract the file path from the public URL to delete it from storage
+    try {
+      const urlObj = new URL(file_url);
+      const parts = urlObj.pathname.split('/');
+      // The path usually looks like /storage/v1/object/public/tasks/uploads/filename.ext
+      // We just need 'uploads/filename.ext'
+      const uploadsIndex = parts.indexOf('uploads');
+      if (uploadsIndex !== -1) {
+        const filePath = parts.slice(uploadsIndex).join('/');
+        await supabase.storage.from('tasks').remove([filePath]);
+      }
+    } catch (e) {
+      console.error("Failed to parse and delete storage object", e);
+    }
+
+    // Delete from database
+    await supabase.from('tasks').delete().eq('id', id);
+    setTasks(prev => prev.filter(t => t.id !== id));
+  };
 
   return (
     <div className="p-8 max-w-6xl mx-auto space-y-8">
@@ -90,7 +113,7 @@ export default function SupervisorPage() {
                         {new Date(task.created_at).toLocaleString()}
                       </div>
                     </td>
-                    <td className="p-6 text-right">
+                    <td className="p-6 text-right space-x-2">
                       <a 
                         href={task.file_url} 
                         target="_blank" 
@@ -98,8 +121,15 @@ export default function SupervisorPage() {
                         className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-xl hover:bg-emerald-500 hover:text-white transition-all font-bold text-sm"
                       >
                         {task.file_type === 'image' ? <ImageIcon size={16} /> : <File size={16} />}
-                        View Work
+                        View
                       </a>
+                      <button 
+                        onClick={() => handleDelete(task.id, task.file_url)}
+                        className="inline-flex items-center justify-center p-2 bg-rose-500/10 text-rose-400 border border-rose-500/20 rounded-xl hover:bg-rose-500 hover:text-white transition-all"
+                        title="Delete Task"
+                      >
+                        <Trash2 size={16} />
+                      </button>
                     </td>
                   </tr>
                 ))}
