@@ -87,45 +87,45 @@ export default function UploadPage() {
           <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-500 flex items-center justify-center shadow-lg">
             <UploadCloud size={24} className="text-white" />
           </div>
-          Task Repository
+          Repositorio de Tareas
         </h1>
-        <p className="text-slate-400 text-lg">Upload your completed exercises, documents, and pictures here.</p>
+        <p className="text-slate-400 text-lg">Sube tus ejercicios completados, documentos y fotos aquí.</p>
       </div>
 
       <div className="bg-white/5 border border-white/10 rounded-3xl p-8 backdrop-blur-xl shadow-2xl">
         <form onSubmit={handleSubmit} className="flex flex-col gap-8">
           
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-bold text-slate-400 uppercase tracking-wider">Task Title / Description</label>
+            <label className="text-sm font-bold text-slate-400 uppercase tracking-wider">Título / Descripción de la Tarea</label>
             <input 
               type="text" 
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="bg-slate-900/50 border border-slate-700 text-white rounded-xl py-4 px-5 outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all text-lg"
-              placeholder="e.g. Math Homework - Page 42"
+              placeholder="Ej. Deberes de Mates - Página 42"
             />
           </div>
 
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-bold text-slate-400 uppercase tracking-wider">Subject / Category</label>
+            <label className="text-sm font-bold text-slate-400 uppercase tracking-wider">Asignatura / Categoría</label>
             <select
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               className="bg-slate-900/50 border border-slate-700 text-white rounded-xl py-4 px-5 outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all text-lg appearance-none cursor-pointer"
             >
               <option value="General">General</option>
-              <option value="Networks">Networks</option>
-              <option value="Operating Systems">Operating Systems</option>
+              <option value="Redes">Redes</option>
+              <option value="Sistemas Operativos">Sistemas Operativos</option>
               <option value="Hardware">Hardware</option>
-              <option value="Web Apps">Web Apps</option>
-              <option value="Databases">Databases</option>
-              <option value="Office Apps">Office Apps</option>
+              <option value="Aplicaciones Web">Aplicaciones Web</option>
+              <option value="Bases de Datos">Bases de Datos</option>
+              <option value="Ofimática">Ofimática</option>
             </select>
           </div>
 
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-bold text-slate-400 uppercase tracking-wider">File Upload (Images or Documents)</label>
+            <label className="text-sm font-bold text-slate-400 uppercase tracking-wider">Subir Archivo (Imágenes o Documentos)</label>
             
             <div 
               onDragOver={(e) => e.preventDefault()}
@@ -155,15 +155,15 @@ export default function UploadPage() {
                     onClick={(e) => { e.stopPropagation(); setFile(null); if(fileInputRef.current) fileInputRef.current.value = ''; }}
                     className="mt-2 text-slate-400 hover:text-red-400 flex items-center gap-1 text-sm font-bold bg-black/20 px-3 py-1 rounded-lg transition-colors"
                   >
-                    <X size={14} /> Remove File
+                    <X size={14} /> Eliminar Archivo
                   </button>
                 </div>
               ) : (
                 <>
                   <UploadCloud size={48} className="text-slate-500" />
                   <div className="text-center">
-                    <p className="font-bold text-lg text-white mb-1">Click to browse or drag and drop</p>
-                    <p className="text-sm text-slate-400">Supports JPG, PNG, PDF, DOCX</p>
+                    <p className="font-bold text-lg text-white mb-1">Haz clic para buscar o arrastra y suelta aquí</p>
+                    <p className="text-sm text-slate-400">Soporta JPG, PNG, PDF, DOCX</p>
                   </div>
                 </>
               )}
@@ -180,11 +180,11 @@ export default function UploadPage() {
             }`}
           >
             {loading ? (
-              <><Loader2 className="animate-spin" /> Uploading to Server...</>
+              <><Loader2 className="animate-spin" /> Subiendo al servidor...</>
             ) : success ? (
-              <><CheckCircle2 /> Task Uploaded Successfully!</>
+              <><CheckCircle2 /> ¡Tarea subida con éxito!</>
             ) : (
-              <><UploadCloud size={20} /> Submit Task</>
+              <><UploadCloud size={20} /> Enviar Tarea</>
             )}
           </button>
         </form>

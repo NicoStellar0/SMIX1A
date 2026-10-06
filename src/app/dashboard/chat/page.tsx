@@ -140,7 +140,7 @@ export default function ChatPage() {
     // Slash Commands for Moderators
     if (content.startsWith('/') && isModerator) {
       if (content === '/clear') {
-        if (confirm('Are you sure you want to clear ALL messages in this channel?')) {
+        if (confirm('¿Estás seguro de que quieres borrar TODOS los mensajes de este canal?')) {
           await supabase.from('messages').delete().eq('channel', activeChannel);
           setMessages([]); // Clear locally to be faster
         }
@@ -164,7 +164,7 @@ export default function ChatPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this message?')) return;
+    if (!confirm('¿Borrar este mensaje?')) return;
     await supabase.from('messages').delete().eq('id', id);
   };
 
@@ -192,12 +192,12 @@ export default function ChatPage() {
   };
 
   const getChannelName = () => {
-    if (activeChannel === 'general') return 'General Chat';
-    if (activeChannel === 'announcements') return 'Announcements';
+    if (activeChannel === 'general') return 'Chat General';
+    if (activeChannel === 'announcements') return 'Anuncios';
     if (isDM) {
       const otherUserId = activeChannel.replace('dm_', '').replace(currentUser?.id || '', '').replace('_', '');
       const otherUser = profiles.find(p => p.id === otherUserId);
-      return `DM: ${otherUser?.full_name || 'User'}`;
+      return `MD: ${otherUser?.full_name || 'Usuario'}`;
     }
     return activeChannel;
   };
@@ -207,7 +207,7 @@ export default function ChatPage() {
       
       {/* Channels Sidebar */}
       <div className="w-64 bg-white/5 border border-white/10 rounded-3xl p-4 backdrop-blur-xl flex flex-col gap-2 overflow-y-auto">
-        <h2 className="px-4 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Channels</h2>
+        <h2 className="px-4 text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Canales</h2>
         
         <button 
           onClick={() => setActiveChannel('general')}
@@ -222,10 +222,10 @@ export default function ChatPage() {
           className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${activeChannel === 'announcements' ? 'bg-fuchsia-500/20 text-fuchsia-300 shadow-inner' : 'hover:bg-white/5 text-slate-400'}`}
         >
           <Megaphone size={18} />
-          <span className="font-medium">Announcements</span>
+          <span className="font-medium">Anuncios</span>
         </button>
 
-        <h2 className="px-4 text-xs font-bold text-slate-500 uppercase tracking-wider mt-4 mb-2">Direct Messages</h2>
+        <h2 className="px-4 text-xs font-bold text-slate-500 uppercase tracking-wider mt-4 mb-2">Mensajes Directos</h2>
         {profiles.filter(p => p.id !== currentUser?.id).map(p => {
           const dmId = `dm_${[currentUser?.id || '', p.id].sort().join('_')}`;
           return (
@@ -258,11 +258,11 @@ export default function ChatPage() {
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {loading ? (
             <div className="h-full flex items-center justify-center text-slate-500 gap-3">
-              <Loader2 className="animate-spin" /> Loading messages...
+              <Loader2 className="animate-spin" /> Cargando mensajes...
             </div>
           ) : messages.length === 0 ? (
             <div className="h-full flex items-center justify-center text-slate-500">
-              No messages here yet. Be the first!
+              No hay mensajes aquí todavía. ¡Sé el primero!
             </div>
           ) : (
             messages.map((msg) => {
@@ -278,7 +278,7 @@ export default function ChatPage() {
                       </div>
                       <div>
                         <div className="font-bold text-lg text-white">{msg.profiles?.full_name || 'Admin'}</div>
-                        <div className="text-xs text-fuchsia-400 uppercase tracking-widest font-bold">Official Announcement</div>
+                        <div className="text-xs text-fuchsia-400 uppercase tracking-widest font-bold">Anuncio Oficial</div>
                       </div>
                       
                       {isModerator && (
@@ -312,7 +312,7 @@ export default function ChatPage() {
                   {/* Message Bubble */}
                   <div className={`max-w-[70%] flex flex-col gap-1 ${isMe ? 'items-end' : 'items-start'}`}>
                     <div className="flex items-baseline gap-2 px-1">
-                      <span className="font-bold text-sm text-slate-300">{msg.profiles?.full_name || 'Unknown User'}</span>
+                      <span className="font-bold text-sm text-slate-300">{msg.profiles?.full_name || 'Usuario Desconocido'}</span>
                       <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">
                         {msg.profiles?.role}
                       </span>
@@ -352,7 +352,7 @@ export default function ChatPage() {
         <div className="p-4 bg-black/20 border-t border-white/5 shrink-0">
           {isLocked && !isModerator && (
             <div className="mb-3 text-center text-rose-400 font-bold bg-rose-500/10 py-2 rounded-xl border border-rose-500/20 shadow-inner">
-              🔒 This channel is currently locked by an Admin.
+              🔒 Este canal ha sido bloqueado por un Administrador.
             </div>
           )}
           {canWrite ? (
@@ -361,7 +361,7 @@ export default function ChatPage() {
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder={isModerator ? `Message #${activeChannel}... (Try /clear, /lock, /unlock)` : `Message #${activeChannel}...`}
+                placeholder={isModerator ? `Mensaje #${activeChannel}... (Prueba /clear, /lock, /unlock)` : `Mensaje #${activeChannel}...`}
                 className="w-full bg-slate-900/50 border border-slate-700 text-white rounded-2xl py-4 pl-6 pr-14 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-500"
               />
               <button 
@@ -374,7 +374,7 @@ export default function ChatPage() {
             </form>
           ) : (
             <div className="py-4 text-center text-slate-500 font-medium bg-slate-900/30 rounded-2xl border border-slate-800 border-dashed">
-              You do not have permission to write in this channel.
+              No tienes permiso para escribir en este canal.
             </div>
           )}
         </div>

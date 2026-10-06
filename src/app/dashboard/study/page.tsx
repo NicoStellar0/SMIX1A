@@ -68,20 +68,20 @@ export default function StudyPage() {
     <div className="p-8 max-w-6xl mx-auto space-y-12">
       <div className="mb-8">
         <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400 tracking-tight mb-2 flex items-center gap-3">
-          <Sparkles className="text-indigo-400" /> Study Section
+          <Sparkles className="text-indigo-400" /> Sección de Estudio
         </h1>
-        <p className="text-slate-400 text-lg">Master your subjects with interactive Memory Cards and Mind Maps.</p>
+        <p className="text-slate-400 text-lg">Domina tus asignaturas con Tarjetas de Memoria interactivas y Mapas Mentales.</p>
       </div>
 
       {loading ? (
         <div className="flex items-center justify-center py-20 text-slate-500 gap-3">
-          <Loader2 className="animate-spin" /> Loading materials...
+          <Loader2 className="animate-spin" /> Cargando materiales...
         </div>
       ) : materials.length === 0 ? (
         <div className="bg-white/5 border border-white/10 rounded-3xl p-12 text-center backdrop-blur-xl">
           <BookOpen className="mx-auto text-slate-600 mb-4" size={48} />
-          <h3 className="text-xl font-bold text-white mb-2">No materials yet</h3>
-          <p className="text-slate-400">The Admin hasn't published any study materials. Check back later!</p>
+          <h3 className="text-xl font-bold text-white mb-2">No hay materiales todavía</h3>
+          <p className="text-slate-400">El Administrador no ha publicado ningún material de estudio aún. ¡Vuelve más tarde!</p>
         </div>
       ) : (
         <>
@@ -92,7 +92,7 @@ export default function StudyPage() {
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-fuchsia-500 flex items-center justify-center shadow-lg">
                   <BookOpen size={20} />
                 </div>
-                Memory Cards
+                Tarjetas de Memoria
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -111,7 +111,7 @@ export default function StudyPage() {
                         <div className="absolute inset-0 backface-hidden bg-white/5 border border-white/10 rounded-3xl p-6 flex flex-col justify-between hover:bg-white/10 transition-colors shadow-xl">
                           <div>
                             <div className="text-xs font-bold uppercase tracking-wider text-indigo-400 mb-4 flex justify-between">
-                              <span>Question</span>
+                              <span>Pregunta</span>
                               <div className="flex items-center gap-2">
                                 <span className="text-slate-500 truncate max-w-[120px]">{card.title}</span>
                                 {isModerator && (
@@ -124,7 +124,7 @@ export default function StudyPage() {
                             <h3 className="text-xl font-medium text-white">{card.content.question}</h3>
                           </div>
                           <div className="text-sm text-slate-500 flex items-center gap-1 group-hover:text-indigo-400 transition-colors">
-                            Click to reveal answer <ChevronRight size={16} />
+                            Click para revelar respuesta <ChevronRight size={16} />
                           </div>
                         </div>
 
@@ -132,7 +132,7 @@ export default function StudyPage() {
                         <div className="absolute inset-0 backface-hidden rotate-y-180 bg-gradient-to-br from-indigo-500/20 to-fuchsia-500/20 border border-indigo-500/30 rounded-3xl p-6 flex flex-col justify-between shadow-[0_0_30px_rgba(99,102,241,0.2)]">
                           <div>
                             <div className="text-xs font-bold uppercase tracking-wider text-fuchsia-400 mb-4">
-                              Answer
+                              Respuesta
                             </div>
                             <h3 className="text-xl font-medium text-white leading-relaxed">{card.content.answer}</h3>
                           </div>
@@ -152,7 +152,7 @@ export default function StudyPage() {
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-fuchsia-500 to-indigo-500 flex items-center justify-center shadow-lg">
                   <BrainCircuit size={20} />
                 </div>
-                Mind Maps
+                Mapas Mentales
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -183,7 +183,7 @@ export default function StudyPage() {
                           rel="noopener noreferrer"
                           className="px-4 py-2 bg-fuchsia-500/20 text-fuchsia-300 rounded-xl text-sm font-bold hover:bg-fuchsia-500/30 transition-colors"
                         >
-                          View Full Map
+                          Ver Mapa
                         </a>
                       </div>
                     </div>

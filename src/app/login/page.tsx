@@ -37,7 +37,7 @@ export default function AuthPage() {
           },
         });
         if (error) throw error;
-        alert('Check your email for the confirmation link!');
+        alert('¡Revisa tu correo para el enlace de confirmación!');
       }
     } catch (err: any) {
       setError(err.message);
@@ -68,10 +68,10 @@ export default function AuthPage() {
               <BookOpen className="text-white" size={32} />
             </div>
             <h1 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400 tracking-tight">
-              {isLogin ? 'Welcome Back' : 'Join the Class'}
+              {isLogin ? 'Bienvenido' : 'Únete a la Clase'}
             </h1>
             <p className="text-slate-400 mt-2 font-medium">
-              {isLogin ? 'Log in to access your study materials.' : 'Create an account to start tracking your tasks.'}
+              {isLogin ? 'Inicia sesión para acceder a tus materiales de estudio.' : 'Crea una cuenta para empezar a organizar tus tareas.'}
             </p>
           </div>
 
@@ -82,7 +82,7 @@ export default function AuthPage() {
                 <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
                 <input 
                   type="text" 
-                  placeholder="Full Name" 
+                  placeholder="Nombre Completo" 
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className="w-full bg-slate-900/50 border border-slate-700 text-white rounded-xl py-3 pl-12 pr-4 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-500"
@@ -95,7 +95,7 @@ export default function AuthPage() {
               <input 
                 type="email" 
                 required
-                placeholder="Email Address" 
+                placeholder="Dirección de Correo" 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full bg-slate-900/50 border border-slate-700 text-white rounded-xl py-3 pl-12 pr-4 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-500"
@@ -107,7 +107,7 @@ export default function AuthPage() {
               <input 
                 type="password" 
                 required
-                placeholder="Password" 
+                placeholder="Contraseña" 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full bg-slate-900/50 border border-slate-700 text-white rounded-xl py-3 pl-12 pr-4 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-500"
@@ -125,7 +125,7 @@ export default function AuthPage() {
               disabled={loading}
               className="w-full bg-gradient-to-r from-indigo-500 to-fuchsia-500 hover:from-indigo-600 hover:to-fuchsia-600 text-white rounded-xl py-3.5 font-bold shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2 group transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Processing...' : (isLogin ? 'Sign In' : 'Create Account')}
+              {loading ? 'Procesando...' : (isLogin ? 'Iniciar Sesión' : 'Crear Cuenta')}
               {!loading && <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />}
             </button>
           </form>
@@ -136,9 +136,9 @@ export default function AuthPage() {
               onClick={() => setIsLogin(!isLogin)}
               className="text-slate-400 hover:text-white text-sm font-medium transition-colors"
             >
-              {isLogin ? "Don't have an account? " : "Already have an account? "}
+              {isLogin ? "¿No tienes una cuenta? " : "¿Ya tienes una cuenta? "}
               <span className="text-indigo-400 hover:text-indigo-300 underline decoration-indigo-500/30 underline-offset-4">
-                {isLogin ? 'Sign up' : 'Log in'}
+                {isLogin ? 'Regístrate' : 'Inicia sesión'}
               </span>
             </button>
           </div>

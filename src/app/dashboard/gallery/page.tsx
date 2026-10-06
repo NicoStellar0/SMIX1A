@@ -83,10 +83,10 @@ export default function GalleryPage() {
           <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-500 flex items-center justify-center shadow-lg">
             <Library size={24} className="text-white" />
           </div>
-          Task Gallery
+          Galería de Tareas
         </h1>
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mt-2">
-          <p className="text-slate-400 text-lg">Browse and study from documents and pictures uploaded by your colleagues.</p>
+          <p className="text-slate-400 text-lg">Explora y estudia con documentos y fotos subidos por tus compañeros.</p>
           <div className="flex items-center gap-2 bg-slate-900/50 p-2 rounded-xl border border-slate-700">
             <Filter size={18} className="text-cyan-400 ml-2" />
             <select
@@ -94,14 +94,14 @@ export default function GalleryPage() {
               onChange={(e) => setSelectedSubject(e.target.value)}
               className="bg-transparent text-white outline-none appearance-none cursor-pointer pr-4 font-bold"
             >
-              <option value="All">All Subjects</option>
+              <option value="All">Todas las Asignaturas</option>
               <option value="General">General</option>
-              <option value="Networks">Networks</option>
-              <option value="Operating Systems">Operating Systems</option>
+              <option value="Redes">Redes</option>
+              <option value="Sistemas Operativos">Sistemas Operativos</option>
               <option value="Hardware">Hardware</option>
-              <option value="Web Apps">Web Apps</option>
-              <option value="Databases">Databases</option>
-              <option value="Office Apps">Office Apps</option>
+              <option value="Aplicaciones Web">Aplicaciones Web</option>
+              <option value="Bases de Datos">Bases de Datos</option>
+              <option value="Ofimática">Ofimática</option>
             </select>
           </div>
         </div>
@@ -109,13 +109,13 @@ export default function GalleryPage() {
 
       {loading ? (
         <div className="flex items-center justify-center py-32 text-slate-500 gap-3">
-          <Loader2 className="animate-spin" /> Loading gallery...
+          <Loader2 className="animate-spin" /> Cargando galería...
         </div>
       ) : filteredTasks.length === 0 ? (
         <div className="bg-white/5 border border-white/10 rounded-3xl p-16 flex flex-col items-center justify-center text-slate-500 backdrop-blur-xl">
           <Library size={48} className="mb-4 opacity-50 text-cyan-500" />
-          <p className="text-2xl font-bold text-white mb-2">No tasks found for {selectedSubject}.</p>
-          <p>Be the first to upload a document!</p>
+          <p className="text-2xl font-bold text-white mb-2">No se encontraron tareas para {selectedSubject === 'All' ? 'Todas las Asignaturas' : selectedSubject}.</p>
+          <p>¡Sé el primero en subir un documento!</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -131,7 +131,7 @@ export default function GalleryPage() {
                 {/* Hover overlay button */}
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
                   <a href={task.file_url} target="_blank" rel="noopener noreferrer" className="bg-cyan-500 text-white font-bold px-6 py-3 rounded-xl shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all">
-                    Open File
+                    Abrir Archivo
                   </a>
                 </div>
                 

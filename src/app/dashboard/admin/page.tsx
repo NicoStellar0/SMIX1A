@@ -106,9 +106,9 @@ export default function AdminPage() {
     <div className="p-8 max-w-4xl mx-auto">
       <div className="mb-8">
         <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-500 tracking-tight mb-2">
-          Admin Studio
+          Estudio de Admin
         </h1>
-        <p className="text-slate-400">Publish study materials for your students to access.</p>
+        <p className="text-slate-400">Publica materiales de estudio para que tus estudiantes puedan acceder.</p>
       </div>
 
       <div className="bg-white/5 border border-white/10 rounded-3xl backdrop-blur-xl overflow-hidden shadow-2xl">
@@ -121,7 +121,7 @@ export default function AdminPage() {
             }`}
           >
             <BookOpen size={18} />
-            Memory Card
+            Tarjeta de Memoria
           </button>
           <button
             onClick={() => setActiveTab('mind_map')}
@@ -130,7 +130,7 @@ export default function AdminPage() {
             }`}
           >
             <BrainCircuit size={18} />
-            Mind Map
+            Mapa Mental
           </button>
           <button
             onClick={() => setActiveTab('users')}
@@ -139,7 +139,7 @@ export default function AdminPage() {
             }`}
           >
             <Users size={18} />
-            Manage Users
+            Gestionar Usuarios
           </button>
           <button
             onClick={() => setActiveTab('analytics')}
@@ -148,7 +148,7 @@ export default function AdminPage() {
             }`}
           >
             <BarChart3 size={18} />
-            Analytics
+            Analíticas
           </button>
         </div>
 
@@ -156,7 +156,7 @@ export default function AdminPage() {
         <div className="p-8">
           {activeTab === 'analytics' ? (
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2"><TrendingUp className="text-emerald-400" /> Platform Activity</h2>
+              <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2"><TrendingUp className="text-emerald-400" /> Actividad de la Plataforma</h2>
               {loadingStats ? (
                 <div className="flex justify-center py-12 text-slate-500"><Loader2 className="animate-spin" /></div>
               ) : (
@@ -165,21 +165,21 @@ export default function AdminPage() {
                     <div className="w-12 h-12 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center"><UploadCloud size={24} /></div>
                     <div>
                       <div className="text-3xl font-bold text-white">{stats.totalTasks}</div>
-                      <div className="text-slate-400 text-sm font-bold uppercase tracking-wider">Tasks Uploaded</div>
+                      <div className="text-slate-400 text-sm font-bold uppercase tracking-wider">Tareas Subidas</div>
                     </div>
                   </div>
                   <div className="bg-white/5 border border-white/10 rounded-2xl p-6 flex items-center gap-4 hover:border-indigo-500/50 transition-colors">
                     <div className="w-12 h-12 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center"><MessageSquare size={24} /></div>
                     <div>
                       <div className="text-3xl font-bold text-white">{stats.totalMessages}</div>
-                      <div className="text-slate-400 text-sm font-bold uppercase tracking-wider">Messages Sent</div>
+                      <div className="text-slate-400 text-sm font-bold uppercase tracking-wider">Mensajes Enviados</div>
                     </div>
                   </div>
                   <div className="bg-white/5 border border-white/10 rounded-2xl p-6 flex items-center gap-4 hover:border-fuchsia-500/50 transition-colors">
                     <div className="w-12 h-12 rounded-xl bg-fuchsia-500/20 text-fuchsia-400 flex items-center justify-center"><BookOpen size={24} /></div>
                     <div>
                       <div className="text-3xl font-bold text-white">{stats.totalMaterials}</div>
-                      <div className="text-slate-400 text-sm font-bold uppercase tracking-wider">Study Materials</div>
+                      <div className="text-slate-400 text-sm font-bold uppercase tracking-wider">Materiales de Estudio</div>
                     </div>
                   </div>
                 </div>
@@ -189,7 +189,7 @@ export default function AdminPage() {
             <div className="space-y-6">
               <div className="flex items-center gap-3 mb-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-400">
                 <ShieldAlert size={24} className="shrink-0" />
-                <p className="text-sm font-medium">Changing a user's role grants them immediate access to restricted areas. Be careful who you promote!</p>
+                <p className="text-sm font-medium">Cambiar el rol de un usuario le otorga acceso inmediato a áreas restringidas. ¡Ten cuidado a quién promueves!</p>
               </div>
               
               {loadingUsers ? (
@@ -199,10 +199,10 @@ export default function AdminPage() {
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="border-b border-white/10">
-                        <th className="pb-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Name</th>
+                        <th className="pb-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Nombre</th>
                         <th className="pb-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Email</th>
-                        <th className="pb-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Current Role</th>
-                        <th className="pb-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-right">Change Role</th>
+                        <th className="pb-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Rol Actual</th>
+                        <th className="pb-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-right">Cambiar Rol</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5">
@@ -225,9 +225,9 @@ export default function AdminPage() {
                               onChange={(e) => handleRoleChange(u.id, e.target.value)}
                               className="bg-slate-900 border border-slate-700 text-white rounded-lg px-3 py-2 text-sm outline-none focus:border-amber-500"
                             >
-                              <option value="student">Student</option>
-                              <option value="sub-delegate">Sub-Delegate</option>
-                              <option value="delegate">Delegate</option>
+                              <option value="student">Estudiante</option>
+                              <option value="sub-delegate">Sub-Delegado</option>
+                              <option value="delegate">Delegado</option>
                               <option value="admin">Admin</option>
                             </select>
                           </td>
@@ -242,50 +242,50 @@ export default function AdminPage() {
             <form onSubmit={handleSubmit} className="flex flex-col gap-6">
             
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-bold text-slate-400 uppercase tracking-wider">Title / Topic</label>
+              <label className="text-sm font-bold text-slate-400 uppercase tracking-wider">Título / Tema</label>
               <input 
                 type="text" 
                 required
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 className="bg-slate-900/50 border border-slate-700 text-white rounded-xl py-3 px-4 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
-                placeholder="e.g. Chapter 1: Anatomy Basics"
+                placeholder="Ej. Capítulo 1: Conceptos Básicos"
               />
             </div>
 
             {activeTab === 'memory_card' ? (
               <>
                 <div className="flex flex-col gap-2">
-                  <label className="text-sm font-bold text-slate-400 uppercase tracking-wider">Question</label>
+                  <label className="text-sm font-bold text-slate-400 uppercase tracking-wider">Pregunta</label>
                   <textarea 
                     required
                     value={question}
                     onChange={(e) => setQuestion(e.target.value)}
                     className="bg-slate-900/50 border border-slate-700 text-white rounded-xl py-3 px-4 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all min-h-[100px]"
-                    placeholder="What is the powerhouse of the cell?"
+                    placeholder="¿Cuál es el puerto HTTP por defecto?"
                   />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <label className="text-sm font-bold text-slate-400 uppercase tracking-wider">Answer</label>
+                  <label className="text-sm font-bold text-slate-400 uppercase tracking-wider">Respuesta</label>
                   <textarea 
                     required
                     value={answer}
                     onChange={(e) => setAnswer(e.target.value)}
                     className="bg-slate-900/50 border border-slate-700 text-white rounded-xl py-3 px-4 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all min-h-[100px]"
-                    placeholder="Mitochondria."
+                    placeholder="El puerto 80."
                   />
                 </div>
               </>
             ) : (
               <div className="flex flex-col gap-2">
-                <label className="text-sm font-bold text-slate-400 uppercase tracking-wider">Mind Map Image URL</label>
+                <label className="text-sm font-bold text-slate-400 uppercase tracking-wider">URL de la Imagen del Mapa Mental</label>
                 <input 
                   type="url" 
                   required
                   value={mindMapUrl}
                   onChange={(e) => setMindMapUrl(e.target.value)}
                   className="bg-slate-900/50 border border-slate-700 text-white rounded-xl py-3 px-4 outline-none focus:border-fuchsia-500 focus:ring-1 focus:ring-fuchsia-500 transition-all"
-                  placeholder="https://example.com/mindmap.png"
+                  placeholder="https://ejemplo.com/mapa.png"
                 />
               </div>
             )}
@@ -298,11 +298,11 @@ export default function AdminPage() {
               }`}
             >
               {loading ? (
-                <><Loader2 className="animate-spin" /> Publishing...</>
+                <><Loader2 className="animate-spin" /> Publicando...</>
               ) : success ? (
-                <><CheckCircle2 /> Material Published!</>
+                <><CheckCircle2 /> ¡Material Publicado!</>
               ) : (
-                <><Plus size={20} /> Publish Material</>
+                <><Plus size={20} /> Publicar Material</>
               )}
             </button>
           </form>

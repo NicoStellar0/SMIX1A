@@ -47,15 +47,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
 
   const commonNav = [
-    { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Class Chat', href: '/dashboard/chat', icon: MessageSquare },
-    { name: 'Study Section', href: '/dashboard/study', icon: BookOpen },
-    { name: 'Upload Task', href: '/dashboard/upload', icon: UploadCloud },
-    { name: 'Task Gallery', href: '/dashboard/gallery', icon: Library },
+    { name: 'Resumen', href: '/dashboard', icon: LayoutDashboard },
+    { name: 'Chat de Clase', href: '/dashboard/chat', icon: MessageSquare },
+    { name: 'Estudio', href: '/dashboard/study', icon: BookOpen },
+    { name: 'Subir Tarea', href: '/dashboard/upload', icon: UploadCloud },
+    { name: 'Galería de Tareas', href: '/dashboard/gallery', icon: Library },
   ];
 
   const adminNav = [
-    { name: 'Admin Studio', href: '/dashboard/admin', icon: Shield },
+    { name: 'Estudio Admin', href: '/dashboard/admin', icon: Shield },
   ];
 
   const supervisorNav = [
@@ -71,7 +71,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-fuchsia-500 flex items-center justify-center shadow-lg shadow-indigo-500/30">
               <BookOpen className="text-white" size={20} />
             </div>
-            <span className="text-xl font-bold text-white tracking-tight">Class Hub</span>
+            <span className="text-xl font-bold text-white tracking-tight">Clase SMIX1A</span>
           </div>
 
           <nav className="space-y-2">
@@ -93,7 +93,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {/* Supervisor Only Menu */}
             {(userRole === 'admin' || userRole === 'delegate' || userRole === 'sub-delegate') && (
               <>
-                <div className="pt-4 pb-2 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Moderation</div>
+                <div className="pt-4 pb-2 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Moderación</div>
                 {supervisorNav.map((item) => (
                   <Link key={item.name} href={item.href}>
                     <div className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 font-medium ${
@@ -110,7 +110,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {/* Admin Only Menu */}
             {userRole === 'admin' && (
               <>
-                <div className="pt-4 pb-2 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Management</div>
+                <div className="pt-4 pb-2 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Gestión</div>
                 {adminNav.map((item) => (
                   <Link key={item.name} href={item.href}>
                     <div className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 font-medium ${
@@ -131,14 +131,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             onClick={toggleTheme}
             className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-colors font-medium"
           >
-            {theme === 'dark' ? <><Sun size={18} /> Light Mode</> : <><Moon size={18} /> Dark Mode</>}
+            {theme === 'dark' ? <><Sun size={18} /> Modo Claro</> : <><Moon size={18} /> Modo Oscuro</>}
           </button>
           <button 
             onClick={handleLogout}
             className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-rose-400/10 transition-colors font-medium"
           >
             <LogOut size={18} />
-            Sign Out
+            Cerrar Sesión
           </button>
         </div>
       </aside>
