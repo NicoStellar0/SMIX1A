@@ -98,7 +98,9 @@ export default function AdminPage() {
       
       const { error: uploadError } = await supabase.storage
         .from('tasks')
-        .upload(filePath, mindMapFile);
+        .upload(filePath, mindMapFile, {
+          contentType: fileExt === 'html' ? 'text/html' : (mindMapFile.type || 'application/octet-stream')
+        });
         
       if (uploadError) {
         alert('Error subiendo archivo: ' + uploadError.message);
