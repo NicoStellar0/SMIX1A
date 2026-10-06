@@ -2,25 +2,44 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, BookOpen, UploadCloud, Shield, LogOut, MessageSquare } from 'lucide-react';
+import { LayoutDashboard, BookOpen, UploadCloud, Shield, LogOut, MessageSquare, Eye } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { useEffect, useState } from 'react';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const supabase = createClient();
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchRole = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+        if (data) setUserRole(data.role);
+      }
+    };
+    fetchRole();
+  }, [supabase]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     window.location.href = '/login';
   };
 
-  const navItems = [
+  const commonNav = [
     { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Class Chat', href: '/dashboard/chat', icon: MessageSquare },
     { name: 'Study Section', href: '/dashboard/study', icon: BookOpen },
     { name: 'Upload Task', href: '/dashboard/upload', icon: UploadCloud },
-    // Admin Only
+  ];
+
+  const adminNav = [
     { name: 'Admin Studio', href: '/dashboard/admin', icon: Shield },
+  ];
+
+  const supervisorNav = [
+    { name: 'Supervisor', href: '/dashboard/supervisor', icon: Eye },
   ];
 
   return (
@@ -36,16 +55,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
 
           <nav className="space-y-2">
-            {navItems.map((item) => {
+            {commonNav.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href;
-              
               return (
                 <Link key={item.name} href={item.href}>
                   <div className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 font-medium ${
-                    isActive 
-                      ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 shadow-inner' 
-                      : 'text-slate-400 hover:text-white hover:bg-white/5'
+                    isActive ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 shadow-inner' : 'text-slate-400 hover:text-white hover:bg-white/5'
                   }`}>
                     <Icon size={18} />
                     {item.name}
@@ -53,6 +69,40 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </Link>
               );
             })}
+
+            {/* Supervisor Only Menu */}
+            {(userRole === 'delegate' || userRole === 'sub-delegate') && (
+              <>
+                <div className="pt-4 pb-2 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Moderation</div>
+                {supervisorNav.map((item) => (
+                  <Link key={item.name} href={item.href}>
+                    <div className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 font-medium ${
+                      pathname === item.href ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-inner' : 'text-slate-400 hover:text-white hover:bg-white/5'
+                    }`}>
+                      <item.icon size={18} />
+                      {item.name}
+                    </div>
+                  </Link>
+                ))}
+              </>
+            )}
+
+            {/* Admin Only Menu */}
+            {userRole === 'admin' && (
+              <>
+                <div className="pt-4 pb-2 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Management</div>
+                {adminNav.map((item) => (
+                  <Link key={item.name} href={item.href}>
+                    <div className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 font-medium ${
+                      pathname === item.href ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-inner' : 'text-slate-400 hover:text-white hover:bg-white/5'
+                    }`}>
+                      <item.icon size={18} />
+                      {item.name}
+                    </div>
+                  </Link>
+                ))}
+              </>
+            )}
           </nav>
         </div>
 
