@@ -71,7 +71,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             })}
 
             {/* Supervisor Only Menu */}
-            {(userRole === 'delegate' || userRole === 'sub-delegate') && (
+            {(userRole === 'admin' || userRole === 'delegate' || userRole === 'sub-delegate') && (
               <>
                 <div className="pt-4 pb-2 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Moderation</div>
                 {supervisorNav.map((item) => (
