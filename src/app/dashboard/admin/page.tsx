@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { BookOpen, BrainCircuit, Plus, Loader2, CheckCircle2, Users, ShieldAlert, BarChart3, TrendingUp, MessageSquare, UploadCloud } from 'lucide-react';
 
