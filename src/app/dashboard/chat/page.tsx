@@ -14,6 +14,7 @@ type Profile = {
 
 type Message = {
   id: string;
+  content: string;
   channel: string;
   created_at: string;
   author_id: string;
@@ -35,7 +36,7 @@ export default function ChatPage() {
   const [loading, setLoading] = useState(true);
   const [isLocked, setIsLocked] = useState(false);
   const [profiles, setProfiles] = useState<Profile[]>([]);
-  const [pollVotes, setPollVotes] = useState<Record<string, { option_index: number, user_id: string }[]>>({});
+  const [pollVotes, setPollVotes] = useState<Record<string, { id: string, message_id: string, option_index: number, user_id: string }[]>>({});
   
   const supabase = createClient();
   const messagesEndRef = useRef<HTMLDivElement>(null);
