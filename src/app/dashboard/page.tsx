@@ -18,6 +18,8 @@ export default function DashboardPage() {
   const [showAddEvent, setShowAddEvent] = useState(false);
   const [newEventTitle, setNewEventTitle] = useState('');
   const [newEventDate, setNewEventDate] = useState('');
+  const [newEventTimeStart, setNewEventTimeStart] = useState('');
+  const [newEventTimeEnd, setNewEventTimeEnd] = useState('');
   const [newEventType, setNewEventType] = useState<'exam' | 'deadline' | 'holiday'>('exam');
   
   const supabase = createClient();
@@ -45,7 +47,14 @@ export default function DashboardPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const newEvent = { title: newEventTitle, date: newEventDate, type: newEventType, author_id: user.id };
+    let finalTitle = newEventTitle;
+    if (newEventTimeStart && newEventTimeEnd) {
+      finalTitle = `${newEventTitle} ||| ${newEventTimeStart} - ${newEventTimeEnd}`;
+    } else if (newEventTimeStart) {
+      finalTitle = `${newEventTitle} ||| ${newEventTimeStart}`;
+    }
+
+    const newEvent = { title: finalTitle, date: newEventDate, type: newEventType, author_id: user.id };
     
     const { data, error } = await supabase.from('calendar_events').insert(newEvent).select().single();
     if (data) {
@@ -53,6 +62,8 @@ export default function DashboardPage() {
       setShowAddEvent(false);
       setNewEventTitle('');
       setNewEventDate('');
+      setNewEventTimeStart('');
+      setNewEventTimeEnd('');
     }
   };
 
@@ -104,13 +115,25 @@ export default function DashboardPage() {
             {showAddEvent && isModerator && (
               <form onSubmit={handleAddEvent} className="mb-6 p-4 bg-black/30 border border-white/5 rounded-2xl space-y-4">
                 <input type="text" placeholder="Título del Evento" value={newEventTitle} onChange={e => setNewEventTitle(e.target.value)} required className="w-full bg-slate-900 border border-slate-700 text-white rounded-xl py-2 px-3 outline-none" />
-                <div className="flex gap-4">
-                  <input type="date" value={newEventDate} onChange={e => setNewEventDate(e.target.value)} required className="w-full bg-slate-900 border border-slate-700 text-white rounded-xl py-2 px-3 outline-none" />
-                  <select value={newEventType} onChange={e => setNewEventType(e.target.value as any)} className="w-full bg-slate-900 border border-slate-700 text-white rounded-xl py-2 px-3 outline-none">
-                    <option value="exam">Examen</option>
-                    <option value="deadline">Entrega</option>
-                    <option value="holiday">Festivo</option>
-                  </select>
+                <div className="flex flex-col gap-4">
+                  <div className="flex gap-4">
+                    <input type="date" value={newEventDate} onChange={e => setNewEventDate(e.target.value)} required className="w-full bg-slate-900 border border-slate-700 text-white rounded-xl py-2 px-3 outline-none" />
+                    <select value={newEventType} onChange={e => setNewEventType(e.target.value as any)} className="w-full bg-slate-900 border border-slate-700 text-white rounded-xl py-2 px-3 outline-none">
+                      <option value="exam">Examen</option>
+                      <option value="deadline">Entrega</option>
+                      <option value="holiday">Festivo</option>
+                    </select>
+                  </div>
+                  <div className="flex gap-4">
+                    <div className="relative flex-1">
+                      <span className="absolute -top-2 left-3 bg-[#111827] text-[10px] px-1 text-slate-400 font-bold uppercase tracking-wider rounded">Inicio (Opc.)</span>
+                      <input type="time" value={newEventTimeStart} onChange={e => setNewEventTimeStart(e.target.value)} className="w-full bg-slate-900 border border-slate-700 text-white rounded-xl py-2 px-3 outline-none mt-1" />
+                    </div>
+                    <div className="relative flex-1">
+                      <span className="absolute -top-2 left-3 bg-[#111827] text-[10px] px-1 text-slate-400 font-bold uppercase tracking-wider rounded">Fin (Opc.)</span>
+                      <input type="time" value={newEventTimeEnd} onChange={e => setNewEventTimeEnd(e.target.value)} className="w-full bg-slate-900 border border-slate-700 text-white rounded-xl py-2 px-3 outline-none mt-1" />
+                    </div>
+                  </div>
                 </div>
                 <button type="submit" className="w-full py-2 bg-fuchsia-500 hover:bg-fuchsia-400 text-white rounded-xl font-bold transition-all">Añadir Evento</button>
               </form>
@@ -127,10 +150,14 @@ export default function DashboardPage() {
               <div className="space-y-4">
                 {upcomingEvents.map(event => {
                   const daysLeft = calculateDaysLeft(event.date);
+                  const parts = event.title.split('|||');
+                  const mainTitle = parts[0].trim();
+                  const timeRange = parts[1] ? parts[1].trim() : null;
+
                   return (
                     <div key={event.id} className="relative group bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl p-4 transition-all flex items-center justify-between">
                       <div className="flex items-center gap-4">
-                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg shadow-lg ${
+                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg shadow-lg shrink-0 ${
                           event.type === 'exam' ? 'bg-rose-500/20 text-rose-400' :
                           event.type === 'deadline' ? 'bg-amber-500/20 text-amber-400' :
                           'bg-emerald-500/20 text-emerald-400'
@@ -138,10 +165,17 @@ export default function DashboardPage() {
                           {new Date(event.date).getDate()}
                         </div>
                         <div>
-                          <h3 className="font-bold text-white text-lg">{event.title}</h3>
-                          <p className="text-slate-400 text-sm uppercase tracking-widest font-bold">
-                            {event.type}
-                          </p>
+                          <h3 className="font-bold text-white text-lg leading-tight">{mainTitle}</h3>
+                          <div className="flex items-center gap-2 mt-1">
+                            <p className="text-slate-400 text-xs uppercase tracking-widest font-bold">
+                              {event.type}
+                            </p>
+                            {timeRange && (
+                              <span className="bg-black/30 border border-white/5 px-2 py-0.5 rounded-md text-[10px] font-mono text-slate-300 flex items-center gap-1 shadow-inner">
+                                <Clock size={10} className="text-indigo-400" /> {timeRange}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                       
